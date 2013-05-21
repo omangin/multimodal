@@ -21,3 +21,4 @@ Dependencies
 - scipy
 - scikit-learn
 - audio-tools (for Acorns DB)
+- skeleton-recorder
