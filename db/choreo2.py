@@ -7,22 +7,26 @@ __date__ = '08/2012'
 
 """Choerography dataset v2.
 
-    Still under construction.
-    Uses representation from ros_skeleton_recorder.
+    More information can be found at:
+    http://flowers.inria.fr/choreo2/
 """
 
 
-from skeleton_recorder.database import Database
+import os
+
+from multimodal.local import CONFIG
+from multimodal.db.models.kinect_motion import MotionDatabase
 
 
-DATA_DIR = '/home/omangin/work/data/'
-# Motion DB
-MOTION_DB_FILE = DATA_DIR + 'capture/kinect2/primitives_all.json'
+def default_file():
+    return os.path.join(CONFIG['db-dir'], 'choreo2', 'choreo2.json')
+
 
 ## Load motion DB and features
 
+def load(db_file=None, verbose=False):
+    if db_file is None:
+        db_file = default_file()
+    return MotionDatabase.load_from_npz(db_file, verbose=verbose)
 
-def load(db_file=MOTION_DB_FILE):
-    return Database.load_from_npz(db_file)
-
-load.__doc__ = Database.load_from_npz.__doc__
+load.__doc__ = MotionDatabase.load_from_npz.__doc__
