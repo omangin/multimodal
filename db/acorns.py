@@ -18,16 +18,17 @@ from multimodal.local import CONFIG
 from multimodal.db.models.acorns import AcornsDB, check_year
 
 
-# TODO auto blacklist
-BLACKLIST_Y1 = [[277]]  # Bad records (empty, etc.)
+BLACKLIST_Y1 = [[], [176], [], []]  # Bad records (no label, empty, etc.)
+BLACKLIST_Y2 = [[]] * 10
 
 
 def default_acorns_dir():
     """May raise NoConfigValueError."""
     return os.path.join(CONFIG['db-dir'], 'ACORNS')
 
+
 def default_acorns_file(year):
-     return os.path.join("Acorns_Y%d.xml" % year)
+    return os.path.join("Acorns_Y%d.xml" % year)
 
 
 def check_speaker(year, speaker):
@@ -37,7 +38,7 @@ def check_speaker(year, speaker):
               % (year, n_speaker))
 
 
-def load(year, DB_FILE=None):
+def load(year, DB_FILE=None, blacklist=False):
     """year: 1 or 2
     """
     check_year(year)
@@ -45,24 +46,31 @@ def load(year, DB_FILE=None):
         DB_FILE = os.path.join(default_acorns_dir(), default_acorns_file(year))
     db = AcornsDB()
     db.load_from(DB_FILE)
+    for recs, blacklist in zip(db.records,
+                               BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2):
+        for r in blacklist:
+            recs.pop(r)
     return db
 
 
-def load_features_and_labels(year, speaker):
-    db = load(year)
+def load_features_and_labels(year, speaker, blacklist=False):
+    db = load(year, blacklist=blacklist)
     labels = [r.tags for r in db.records[speaker]]
-    Xsound = load_features(year, speaker)
+    Xsound = load_features(year, speaker, blacklist=blacklist)
     assert(Xsound.shape[0] == len(labels))
     return Xsound, labels, db.tags
 
 
-def load_features(year, speaker):
+def load_features(year, speaker, blacklist=False):
     check_year(year)
     check_speaker(year, speaker)
     feat_file = os.path.join(CONFIG['feat-dir'],
-                             "acorns_HAC_Y%d_S%0.2d.mat" % (year, speaker))
+                             "acorns_HAC_Y%d_S%0.2d.mat" % (year, 1 + speaker))
     hac_mat = loadmat(feat_file)
-    hacs = hac_mat['FFFF'][0]  # HAC representation of records from speaker 1
+    hacs = list(hac_mat['FFFF'][0])  # HAC representation of records
+    if blacklist:
+        for r in (BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2)[speaker]:
+            hacs.pop(r)
     # Compute sound data matrix
     Xsound = sp.vstack([h.T for h in hacs]).tocsr()
     # CSR format, shape: (n, b)

@@ -44,6 +44,17 @@ class Record:
     def __ge__(self, other):
         return not self < other
 
+    def __str__(self):
+        return "<\"{}\", {}, tags: {} ({})>".format(
+                self.trans,
+                self.audio,
+                [self.db.tags[t] for t in self.tags],
+                self.db.spkrs[self.spkr_id],
+                )
+
+    def __repr__(self):
+        return self.__str__()
+
     def get_tag_names(self):
         return [self.db.tags[i] for i in self.tags]
 
