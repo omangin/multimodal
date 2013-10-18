@@ -1,0 +1,26 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
+
+import os
+import sys
+
+from multimodal.db.acorns import (AcornsDB,
+                                  default_acorns_dir,
+                                  default_acorns_file)
+
+
+if len(sys.argv) > 1:
+    out_path = sys.argv[1]
+else:
+    out_path = default_acorns_dir()
+
+for year in [1, 2]:
+    out_file = os.path.join(out_path, default_acorns_file(year))
+    orig_db = AcornsDB()
+    orig_db.from_ACORNS_root(os.path.join(default_acorns_dir(),
+                                          'ACORNS-English-Corpora-ev01/'
+                                          "ACORNS-Y%d-ENG" % year),
+                             year)
+    orig_db.write_xml(out_file)
+    print('Saved year %d to description file: %s.' % (year, out_file))

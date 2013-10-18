@@ -9,28 +9,32 @@ __date__ = '08/2012'
 """
 
 
+import os
+
 from scipy.io import loadmat
 import scipy.sparse as sp
 
-from audio_tools.db.acornsDB import AcornsDB
+from multimodal.local import CONFIG
+from multimodal.db.models.acorns import AcornsDB, check_year
 
 
-DATA_DIR = '/home/omangin/work/data/'
-ACORNS_DIR = DATA_DIR + 'db/ACORNS/'
-DB_DESCR_Y1 = ACORNS_DIR + 'Acorns_Y1.xml'
-DB_DESCR_Y2 = ACORNS_DIR + 'Acorns_Y2.xml'
-
-HAC_FEATURES_FILES_Y1 = [ACORNS_DIR + "acorns_HAC_Y1_S%0.2d" % speaker + '.mat'
-                for speaker in range(1, 5)]
-HAC_FEATURES_FILES_Y2 = [ACORNS_DIR + "acorns_HAC_Y2_S%0.2d" % speaker + '.mat'
-                for speaker in range(1, 11)]
-BLACKLIST_Y1 = [[277]]  # Bad records (empty, etc.)
 # TODO auto blacklist
+BLACKLIST_Y1 = [[277]]  # Bad records (empty, etc.)
 
 
-def check_year(year):
-    if year not in [1, 2]:
-        raise(ValueError, "Wrong year version: %d (should be 1 or 2)" % year)
+def default_acorns_dir():
+    """May raise NoConfigValueError."""
+    return os.path.join(CONFIG['db-dir'], 'ACORNS')
+
+def default_acorns_file(year):
+     return os.path.join("Acorns_Y%d.xml" % year)
+
+
+def check_speaker(year, speaker):
+    n_speaker = AcornsDB.n_speakers(year)
+    if speaker < 0 or speaker > n_speaker:
+        raise(ValueError, "Wrong speaker: %d (should between 1 and %d)"
+              % (year, n_speaker))
 
 
 def load(year, DB_FILE=None):
@@ -38,7 +42,7 @@ def load(year, DB_FILE=None):
     """
     check_year(year)
     if DB_FILE is None:
-        DB_FILE = DB_DESCR_Y1 if year == 1 else DB_DESCR_Y2
+        DB_FILE = os.path.join(default_acorns_dir(), default_acorns_file(year))
     db = AcornsDB()
     db.load_from(DB_FILE)
     return db
@@ -54,8 +58,10 @@ def load_features_and_labels(year, speaker):
 
 def load_features(year, speaker):
     check_year(year)
-    feat_files = HAC_FEATURES_FILES_Y1 if year == 1 else HAC_FEATURES_FILES_Y2
-    hac_mat = loadmat(feat_files[speaker])
+    check_speaker(year, speaker)
+    feat_file = os.path.join(CONFIG['feat-dir'],
+                             "acorns_HAC_Y%d_S%0.2d.mat" % (year, speaker))
+    hac_mat = loadmat(feat_file)
     hacs = hac_mat['FFFF'][0]  # HAC representation of records from speaker 1
     # Compute sound data matrix
     Xsound = sp.vstack([h.T for h in hacs]).tocsr()
