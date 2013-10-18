@@ -11,6 +11,7 @@ __date__ = '04/2012'
 
 import os
 import json
+from collections import OrderedDict
 
 import numpy as np
 from scipy.io import savemat
@@ -139,7 +140,6 @@ class MotionDatabase:
         """
         if filename is None:
             filename = self.name
-        # TODO Constrain json to store in given order (13/03/2012)
 
         meta = self._get_meta(filename, data_type=data_type)
 
@@ -167,24 +167,23 @@ class MotionDatabase:
             raise ValueError("Wrong data type %s" % data_type)
 
     def _get_meta(self, filename, data_type='npz'):
-        meta = {
-                'name': self.name,
-                'marker_names': self.marker_names,
-                }
+        meta = OrderedDict()
+        meta['name'] = self.name
+        meta['marker_names'] = self.marker_names
         if self.has_label_descriptions() or not data_type == 'mat':
                 meta['label_descriptions'] = self.label_descriptions
         meta_records = [
                     {'data_id': i, 'labels': l}
                     for (i, l) in enumerate(self.labels())
                     ]
-        if data_type in ['npz', 'txt']:
-            meta['records'] = meta_records
-
         if data_type == 'npz':
             meta['data_file'] = filename + '.' + data_type
 
         elif data_type == 'txt':
             meta['data_dir'] = filename + DATA_DIR_SUFFIX
+
+        if data_type in ['npz', 'txt']:
+            meta['records'] = meta_records
 
         elif data_type == 'mat':
             meta['data'] = [d for d in self.data()]
