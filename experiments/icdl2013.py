@@ -2,32 +2,36 @@
 # coding: utf-8
 
 
-"""
+"""Main experiment presented in:
+    **Learning semantic components from sub symbolic multi modal perception**
+    O. Mangin and P.Y. Oudeyer
+    *Joint IEEE International Conference on Development and Learning
+     and on Epigenetic Robotics (ICDL EpiRob)*, Osaka (Japan) (2013)
 """
 
 
 import sys
 
 import numpy as np
-from scipy.io import loadmat
 
+from multimodal.db.choreo2 import load_features as load_motion
+from multimodal.db.acorns import load_features as load_sound
 from multimodal.lib.logger import Logger
+from multimodal.pairing import associate_sound_motion
 from multimodal.lib.metrics import kl_div, rev_kl_div, cosine_diff, frobenius
 from multimodal.lib.utils import random_split
 from multimodal.learner import MultimodalLearner
-from multimodal.evalutation import (classify_NN,
+from multimodal.evaluation import (classify_NN,
                                     found_labels_to_score,
                                     chose_examples,)
 
 
 LOGGER = Logger()
 
-DATA_DIR = '/home/omangin/work/data/'
 N_LABELS = 10
-DATA_FILE = DATA_DIR + 'db/paired_features_all.mat'
-
 
 PARAMS = {
+    'acorns_speaker': 1,
     'motion_coef': 1.,  # Data normalization
     'sound_coef': .0008,  # Data normalization
     #'language_coef': 50,
@@ -46,12 +50,19 @@ else:
     out_file = None
     print('No output file')
 
-# Loading data
-data = loadmat(DATA_FILE)
-X = data['Xmotion']
-Y = data['Xsound']
-labels = data['labels'][:, 0]
-if DEBUG:
+# Load data
+Xsound = load_sound(1, PARAMS['acorns_speaker'])
+Xmotion = load_motion()
+# Generate pairing
+label_association, labels, assoc_idx = associate_sound_motion(
+        PARAMS['acorns_speaker'])
+LOGGER.store_global('label-pairing', label_association)
+LOGGER.store_global('sample-pairing', assoc_idx)
+# Align data
+Y = Xsound[[i[0] for i in assoc_idx]]
+X = Xmotion[[i[1] for i in assoc_idx]]
+
+if DEBUG:  # To check for stupid errors
     print('WARNING: Debug mode active, using subset of the database')
     X = X[:200, :11]
     Y = Y[:200, :10]

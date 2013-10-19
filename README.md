@@ -1,5 +1,11 @@
-Multi-modal NMF experiment
-==========================
+Multimodal Learning with NMF
+============================
+
+This code was used in the publication:
+
+O. Mangin, P.Y. Oudeyer, **Learning semantic components from sub symbolic multi modal perception** *Joint IEEE International Conference on Development and Learning and on Epigenetic Robotics (ICDL EpiRob)*, Osaka (Japan) (2013) ([More information](http://olivier.mangin.com/publi#Mangin.2013.ICDL), [bibtex](http://olivier.mangin.com/media/bibtex/Mangin2013.bib))
+
+Please consider citing this paper when re-using the code in scientific publications.
 
 Source files hierarchy:
 -----------------------
@@ -11,13 +17,16 @@ Source files hierarchy:
 
 Data
 ----
-- ACORNS db
-- Choreo1 can be found at [this adress](https://flowers.inria.fr/choreo/doc/index.html)
-- Choreo2 is not yet publicly available
+- ACORNS Caregiver
+- Choreo1 can be found at [flowers.inria.fr/choreo/doc](https://flowers.inria.fr/choreo/doc/index.html)
+- Choreo2 can be found at [flowers.inria.fr/choreo2](https://flowers.inria.fr/choreo2/index.html)
+
+License
+-------
 
 Acknowledgement
 ---------------
-- use transformation.py from [ROS tf package](http://wiki.ros.org/tf)
+- uses transformation.py from [ROS tf package](http://wiki.ros.org/tf)
 
 Dependencies
 ------------
