@@ -95,7 +95,6 @@ class BipartiteGraph:
         return [v for v in range(self.n) if self.slack(u, v) == 0]
 
     def augment_matching(self, tree, v):
-        # TODO Remove
         # Augments matching from given tree and leaf
         while v is not None:
             u = tree.father[v]

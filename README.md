@@ -26,7 +26,8 @@ License
 
 Acknowledgement
 ---------------
-- uses transformation.py from [ROS tf package](http://wiki.ros.org/tf)
+- Uses *transformation.py* from [ROS tf package](http://wiki.ros.org/tf)
+- Uses a few functions imported from [scikit-learn](). These are grouped in file *sklearn_utils.py*.
 
 Dependencies
 ------------

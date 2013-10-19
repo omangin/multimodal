@@ -21,14 +21,11 @@ from multimodal.pairing import associate_sound_motion
 from multimodal.lib.metrics import kl_div, rev_kl_div, cosine_diff, frobenius
 from multimodal.lib.utils import random_split
 from multimodal.learner import MultimodalLearner
-from multimodal.evaluation import (classify_NN,
-                                    found_labels_to_score,
-                                    chose_examples,)
+from multimodal.evaluation import (classify_NN, found_labels_to_score,
+                                   chose_examples)
 
 
 LOGGER = Logger()
-
-N_LABELS = 10
 
 PARAMS = {
     'acorns_speaker': 1,
@@ -39,7 +36,7 @@ PARAMS = {
     'iter_test': 50,
     'k': 50,
     }
-DEBUG = False
+DEBUG = True
 LOGGER.store_global('params', PARAMS)
 LOGGER.store_global('debug', DEBUG)
 
@@ -58,6 +55,7 @@ label_association, labels, assoc_idx = associate_sound_motion(
         PARAMS['acorns_speaker'])
 LOGGER.store_global('label-pairing', label_association)
 LOGGER.store_global('sample-pairing', assoc_idx)
+N_LABELS = len(label_association[0])
 # Align data
 Y = Xsound[[i[0] for i in assoc_idx]]
 X = Xmotion[[i[1] for i in assoc_idx]]
@@ -67,7 +65,7 @@ if DEBUG:  # To check for stupid errors
     X = X[:200, :11]
     Y = Y[:200, :10]
     labels = labels[:200]
-# Extract examples for evalutation
+# Extract examples for evaluation
 examples = chose_examples([l for l in labels])
 others = [i for i in range(len(labels)) if i not in examples]
 Xex = X[examples, :]
@@ -84,6 +82,7 @@ Zex = np.eye(N_LABELS)
 Zex = Zex[ex_labels, :]
 
 # Safety...
+assert(ex_labels == range(N_LABELS))
 assert(n_samples == X.shape[0])
 assert(n_samples == Y.shape[0])
 assert(all([l in range(10) for l in labels]))
@@ -157,7 +156,7 @@ print
 
 
 # Note Random_split creates subset of different sizes (actually only the last
-# one might be smaller) which makes the average not meaningfull
+# one might be smaller) which makes the average not fully meaningful.
 LOGGER.print_all_results()
 
 

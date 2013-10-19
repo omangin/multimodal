@@ -8,10 +8,8 @@ __date__ = '01/2013'
 """
 
 
-import numpy as np
-from sklearn.decomposition.nmf import KLdivNMF, _normalize_sum
-
-from lib.utils import safe_hstack
+from multimodal.lib.nmf import KLdivNMF as NMF
+from multimodal.lib.utils import safe_hstack
 
 
 def learn_dictionary(data, k, iter_nmf=100, verbose=False):
@@ -26,25 +24,6 @@ def fit_coefficients(data_obs, dictionary, iter_nmf=100, verbose=False):
     nmf_obs.components_ = dictionary
     coefficients = nmf_obs.transform(data_obs, scale_W=True)
     return coefficients
-
-
-# NMF class with custom init
-class NMF(KLdivNMF):
-
-    def _init(self, X):
-        n_samples, n_features = X.shape
-        if self.init is None:
-            H_init = _normalize_sum(np.abs(np.random.random(
-                (self.n_components, n_features))) + .01, axis=1)
-        else:
-            assert(self.init.shape == (self.n_components, n_features))
-            H_init = self.init
-        W_init = X.dot(H_init.T)
-        return W_init, H_init
-
-    def transform(self, *args, **kwargs):
-        self.init = self.components_
-        return KLdivNMF.transform(self, *args, **kwargs)
 
 
 class MultimodalLearner(object):
@@ -65,9 +44,11 @@ class MultimodalLearner(object):
             assert(m.shape == (n_samples, d))
         Vtrain = self.stack_data(self.mod, data_matrices)
         # Perform the experiment
+        if self.sparseness is not None:
+            raise NotImplemented
         self.nmf_train = NMF(n_components=self.k, max_iter=iterations, tol=0,
-                              init=None, sparseness=self.sparseness,
-                              sp_coef=self.sp_coef)
+                              init=None)
+        #, sparseness=self.sparseness, sp_coef=self.sp_coef)
         self.nmf_train.fit(Vtrain, scale_W=True)
 
     def get_dico(self, modality=None):

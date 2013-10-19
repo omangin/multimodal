@@ -129,13 +129,6 @@ def delayed_velocities(delay, positions, padding='circular'):
     return positions - slided
 
 
-# TODO eventually replace by some cleaner function(sigmoid, argsh, etc)
-def to_log(values):
-    """Transform values to some kind of logarithmic scale.
-    """
-    return np.sign(values) * np.log(1 + np.abs(values))
-
-
 # Tools to split between train and test sets (for cross-validation, etc.)
 def random_split(n_samples, ratio):
     nb_test = int(ratio * n_samples)
@@ -161,6 +154,13 @@ def safe_hstack(blocks):
         return sp.hstack(blocks)
     else:
         return np.hstack(blocks)
+
+
+def safe_vstack(Xs):
+    if any(sp.issparse(X) for X in Xs):
+        return sp.vstack(Xs)
+    else:
+        return np.vstack(Xs)
 
 
 def normalize_features(X):
