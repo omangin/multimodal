@@ -6,17 +6,19 @@ __date__ = '06/2012'
 
 
 """Module to convert frame representation as output by kinect recording
-to angle and/or angle velocity representations.
+to angle and/or angle velocity histogram representations.
 """
 
 
 import numpy as np
+from scipy.cluster.vq import kmeans, whiten
 
-import pyUtils.transformations as tf
-
-from .utils import delayed_velocities, meta_map
-from .vector_quantization import get_histos, kmeans, whiten
-from .kde2d import gaussian_kde_2d
+from multimodal.lib.transformations import (quaternion_multiply,
+                                            quaternion_inverse,
+                                            euler_from_quaternion)
+from multimodal.lib.utils import delayed_velocities, meta_map
+from multimodal.lib.vector_quantization import get_histos
+from multimodal.lib.kde2d import gaussian_kde_2d
 
 # Note: frame names from ros kinect seems to denote left / right from
 #   the observer point of view.
@@ -51,9 +53,9 @@ def get_angles(sample, source_frame, dest_frame):
     # All transformations are from the base frame, to get transformation from
     # one frame to the other, the first one needs to be inversed.
     # q = q1^{-1} * q2
-    q = tf.quaternion_multiply(tf.quaternion_inverse(sample[source_frame, 3:]),
+    q = quaternion_multiply(quaternion_inverse(sample[source_frame, 3:]),
             sample[dest_frame, 3:])
-    return tf.euler_from_quaternion(q)
+    return euler_from_quaternion(q)
 
 
 def get_angle_array(sample, angles_idx):

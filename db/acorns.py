@@ -38,14 +38,14 @@ def check_speaker(year, speaker):
               % (year, n_speaker))
 
 
-def load(year, DB_FILE=None, blacklist=False):
+def load(year, db_file=None, blacklist=False):
     """year: 1 or 2
     """
     check_year(year)
-    if DB_FILE is None:
-        DB_FILE = os.path.join(default_acorns_dir(), default_acorns_file(year))
+    if db_file is None:
+        db_file = os.path.join(default_acorns_dir(), default_acorns_file(year))
     db = AcornsDB()
-    db.load_from(DB_FILE)
+    db.load_from(db_file)
     for recs, blacklist in zip(db.records,
                                BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2):
         for r in blacklist:
@@ -53,8 +53,8 @@ def load(year, DB_FILE=None, blacklist=False):
     return db
 
 
-def load_features_and_labels(year, speaker, blacklist=False):
-    db = load(year, blacklist=blacklist)
+def load_features_and_labels(year, speaker, blacklist=False, db_file=None):
+    db = load(year, db_file=db_file, blacklist=blacklist)
     labels = [r.tags for r in db.records[speaker]]
     Xsound = load_features(year, speaker, blacklist=blacklist)
     assert(Xsound.shape[0] == len(labels))
