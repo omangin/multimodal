@@ -50,7 +50,6 @@ class TestGenenralizedKL(unittest.TestCase):
         y = .5 * np.ones((4, 2))
         dkl = generalized_KL(x, y)
         ok = np.log(2.) + 3.
-        print dkl, ok
         assert_array_almost_equal(dkl, ok)
 
     def test_axis(self):

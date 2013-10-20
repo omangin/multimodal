@@ -5,6 +5,7 @@ from numpy.testing import assert_array_almost_equal
 import scipy.sparse as sp
 
 from multimodal.lib import nmf
+from multimodal.lib.metrics import generalized_KL
 
 
 def random_NN_matrix(h, w):
@@ -70,7 +71,6 @@ class TestNormalizeSum(unittest.TestCase):
         a = np.random.random((2, 4))
         a[1, :] *= 0
         norm = nmf._normalize_sum(a, axis=1)
-        print norm
         assert(not np.any(np.isnan(norm)))
 
 
@@ -120,45 +120,6 @@ class TestScale(unittest.TestCase):
         assert_array_almost_equal(ok, scaled)
 
 
-class TestGenenralizedKL(unittest.TestCase):
-
-    def setUp(self):
-        self.x = random_NN_matrix(10, 15)
-        self.y = random_NN_matrix(10, 15)
-
-    def test_returns_scalar(self):
-        self.assertTrue(np.isscalar(nmf._generalized_KL(self.x, self.y)))
-
-    def test_raises_ValueError_0(self):
-        with self.assertRaises(ValueError):
-            nmf._generalized_KL(self.x[:-1, :], self.y)
-
-    def test_raises_ValueError_1(self):
-        with self.assertRaises(ValueError):
-            nmf._generalized_KL(self.x[:, 1:], self.y)
-
-    def test_is_NN(self):
-        self.assertTrue(nmf._generalized_KL(self.x, self.y) >= 0)
-
-    def test_is_0_on_same(self):
-        assert_array_almost_equal(nmf._generalized_KL(self.x, self.x), 0)
-
-    def test_is_1_homogenous(self):
-        dkl = nmf._generalized_KL(self.x, self.y)
-        a = np.random.random()
-        adkl = nmf._generalized_KL(a * self.x, a * self.y)
-        assert_array_almost_equal(a * dkl, adkl, decimal=5)
-
-    def test_values(self):
-        x = np.zeros((4, 2))
-        x[1, 1] = 1
-        y = .5 * np.ones((4, 2))
-        dkl = nmf._generalized_KL(x, y)
-        ok = np.log(2.) + 3.
-        print dkl, ok
-        assert_array_almost_equal(dkl, ok)
-
-
 class TestError(unittest.TestCase):
 
     n_samples = 20
@@ -177,20 +138,18 @@ class TestError(unittest.TestCase):
     def test_error_is_gen_kl(self):
         Xdense = self.X.todense()
         err = self.nmf.error(Xdense, self.W, H=self.H)
-        kl = nmf._generalized_KL(Xdense, self.W.dot(self.H))
+        kl = generalized_KL(Xdense, self.W.dot(self.H))
         assert_array_almost_equal(err, kl)
 
     def test_error_sparse(self):
         err_dense = self.nmf.error(self.X.todense(), self.W, H=self.H)
         err_sparse = self.nmf.error(self.X, self.W, H=self.H)
-        print err_dense
-        print err_sparse
         assert_array_almost_equal(err_dense, err_sparse)
 
     def test_error_is_gen_kl_with_compenents(self):
         Xdense = self.X.todense()
         err = self.nmf.error(Xdense, self.W)
-        kl = nmf._generalized_KL(Xdense, self.W.dot(self.nmf.components_))
+        kl = generalized_KL(Xdense, self.W.dot(self.nmf.components_))
         assert_array_almost_equal(err, kl)
 
 
@@ -255,7 +214,6 @@ class TestFitTransform(unittest.TestCase):
     def test_zero_error_on_fact_data(self):
         X = np.dot(random_NN_matrix(5, 2), random_NN_matrix(2, 3))
         W, errors = self.nmf.fit_transform(X, return_errors=True)
-        print errors[-1] / errors[0]
         self.assertTrue(errors[-1] < errors[0] * 1.e-3)
 
 

@@ -15,6 +15,7 @@ import sys
 import numpy as np
 import scipy.sparse as sp
 
+from multimodal.lib.metrics import generalized_KL
 from multimodal.lib.sklearn_utils import atleast2d_or_csr, safe_sparse_dot
 
 
@@ -51,11 +52,6 @@ def _scale(matrix, factors, axis=0):
     if axis == 1:
         factors = factors[:, np.newaxis]
     return np.multiply(matrix, factors)
-
-
-def _generalized_KL(x, y, eps=1.e-8):
-    return (np.multiply(x, np.log(np.divide(x + eps, y + eps))) - x + y
-            ).sum()
 
 
 def _special_sparse_dot(a, b, refmat):
@@ -315,7 +311,7 @@ class KLdivNMF(object):
                 np.log(np.divide(X.data + eps, WH.data + eps))
                 )).sum() - X.data.sum() + WH_sum
         else:
-            return _generalized_KL(X, np.dot(W, H))
+            return generalized_KL(X, np.dot(W, H))
 
     # Projections
 
