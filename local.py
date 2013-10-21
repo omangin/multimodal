@@ -7,7 +7,9 @@ from os.path import expanduser, join
 from multimodal.config import Config
 
 
-CONFIG = Config()
+CONFIG = Config()  # Initialize the configuration. This is required.
+
+# Set useful variables
 CONFIG['data-dir'] = expanduser('~/work/data/')
 # Root for data sets
 CONFIG['db-dir'] = join(CONFIG['data-dir'], 'db')

@@ -17,9 +17,9 @@ import numpy as np
 from multimodal.db.choreo2 import load_features as load_motion
 from multimodal.db.acorns import load_features as load_sound
 from multimodal.lib.logger import Logger
-from multimodal.pairing import associate_sound_motion
 from multimodal.lib.metrics import kl_div, rev_kl_div, cosine_diff, frobenius
 from multimodal.lib.utils import random_split
+from multimodal.pairing import associate_sound_motion
 from multimodal.learner import MultimodalLearner
 from multimodal.evaluation import (classify_NN, found_labels_to_score,
                                    chose_examples)
@@ -28,7 +28,7 @@ from multimodal.evaluation import (classify_NN, found_labels_to_score,
 LOGGER = Logger()
 
 PARAMS = {
-    'acorns_speaker': 1,
+    'acorns_speaker': 0,
     'motion_coef': 1.,  # Data normalization
     'sound_coef': .0008,  # Data normalization
     #'language_coef': 50,
@@ -36,7 +36,7 @@ PARAMS = {
     'iter_test': 50,
     'k': 50,
     }
-DEBUG = True
+DEBUG = False
 LOGGER.store_global('params', PARAMS)
 LOGGER.store_global('debug', DEBUG)
 
@@ -82,7 +82,8 @@ Zex = np.eye(N_LABELS)
 Zex = Zex[ex_labels, :]
 
 # Safety...
-assert(ex_labels == range(N_LABELS))
+if not DEBUG:
+    assert(ex_labels == range(N_LABELS))
 assert(n_samples == X.shape[0])
 assert(n_samples == Y.shape[0])
 assert(all([l in range(10) for l in labels]))
