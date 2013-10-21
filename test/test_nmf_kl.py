@@ -8,8 +8,8 @@ from multimodal.lib import nmf
 from multimodal.lib.metrics import generalized_KL
 
 
-def random_NN_matrix(h, w):
-    return np.abs(np.random.random((h, w)))
+def random_NN_matrix(shape):
+    return np.abs(np.random.random(shape))
 
 
 def random_NN_sparse(h, w, density):
@@ -20,58 +20,6 @@ def random_NN_sparse(h, w, density):
 
 def is_NN(a):
     return np.all(a >= 0)
-
-
-class TestNormalizeSum(unittest.TestCase):
-
-    def test_same_shape_on_1D(self):
-        a = np.random.random((3,))
-        norm = nmf._normalize_sum(a, axis=0)
-        self.assertTrue(np.alltrue(a.shape == norm.shape))
-
-    def test_same_shape_on_2D(self):
-        a = np.random.random((2, 4))
-        norm = nmf._normalize_sum(a, axis=np.random.randint(2))
-        self.assertTrue(np.alltrue(a.shape == norm.shape))
-
-    def test_same_shape_on_3D(self):
-        a = np.random.random((1, 2, 3))
-        norm = nmf._normalize_sum(a, axis=np.random.randint(3))
-        self.assertTrue(np.alltrue(a.shape == norm.shape))
-
-    def test_correct_on_1D(self):
-        a = np.random.random((5,))
-        norm = nmf._normalize_sum(a, axis=0)
-        assert_array_almost_equal(1., np.sum(norm))
-
-    def test_correct_on_2D_axis0(self):
-        a = np.array([[0., 1., 3.], [2., 3., 3.]])
-        norm = nmf._normalize_sum(a, axis=0)
-        ok = np.array([[0., .25, .5], [1., .75, .5]])
-        self.assertTrue(np.alltrue(norm == ok))
-
-    def test_correct_on_2D_axis1(self):
-        a = np.array([[0., 1., 3.], [2., 3., 3.]])
-        norm = nmf._normalize_sum(a, axis=1)
-        ok = np.array([[0., .25, .75], [.25, .375, .375]])
-        self.assertTrue(np.alltrue(norm == ok))
-
-    def test_correct_on_3D(self):
-        a = np.random.random((2, 4, 5))
-        ax = np.random.randint(3)
-        norm = nmf._normalize_sum(a, axis=ax)
-        assert_array_almost_equal(np.sum(norm, ax), 1.)
-
-    def test_error_on_wrong_axis(self):
-        a = np.random.random((2, 3, 4))
-        with self.assertRaises(ValueError):
-            nmf._normalize_sum(a, axis=3)
-
-    def test_robust_on_zero(self):
-        a = np.random.random((2, 4))
-        a[1, :] *= 0
-        norm = nmf._normalize_sum(a, axis=1)
-        assert(not np.any(np.isnan(norm)))
 
 
 class TestScale(unittest.TestCase):
@@ -128,12 +76,12 @@ class TestError(unittest.TestCase):
 
     def setUp(self):
         self.X = random_NN_sparse(self.n_samples, self.n_features, .1)
-        self.W = random_NN_matrix(self.n_samples, self.n_components)
-        self.H = random_NN_matrix(self.n_components, self.n_features)
-        self.nmf = nmf.KLdivNMF(n_components=3, init=None, tol=1e-4,
+        self.W = random_NN_matrix((self.n_samples, self.n_components))
+        self.H = random_NN_matrix((self.n_components, self.n_features))
+        self.nmf = nmf.KLdivNMF(n_components=3, tol=1e-4,
             max_iter=200, eps=1.e-8, subit=10)
-        self.nmf.components_ = random_NN_matrix(self.n_components,
-                self.n_features)
+        self.nmf.components_ = random_NN_matrix((self.n_components,
+                self.n_features))
 
     def test_error_is_gen_kl(self):
         Xdense = self.X.todense()
@@ -160,10 +108,10 @@ class TestUpdates(unittest.TestCase):
     n_features = 30
 
     def setUp(self):
-        self.X = random_NN_matrix(self.n_samples, self.n_features)
-        self.W = random_NN_matrix(self.n_samples, self.n_components)
-        self.H = random_NN_matrix(self.n_components, self.n_features)
-        self.nmf = nmf.KLdivNMF(n_components=3, init=None, tol=1e-4,
+        self.X = random_NN_matrix((self.n_samples, self.n_features))
+        self.W = random_NN_matrix((self.n_samples, self.n_components))
+        self.H = random_NN_matrix((self.n_components, self.n_features))
+        self.nmf = nmf.KLdivNMF(n_components=3, tol=1e-4,
             max_iter=200, eps=1.e-8, subit=10)
         self.nmf.components_ = self.H
 
@@ -192,9 +140,9 @@ class TestSparseUpdates(TestUpdates):
 
     def setUp(self):
         self.X = random_NN_sparse(self.n_samples, self.n_features, .5).tocsr()
-        self.W = random_NN_matrix(self.n_samples, self.n_components)
-        self.H = random_NN_matrix(self.n_components, self.n_features)
-        self.nmf = nmf.KLdivNMF(n_components=3, init=None, tol=1e-4,
+        self.W = random_NN_matrix((self.n_samples, self.n_components))
+        self.H = random_NN_matrix((self.n_components, self.n_features))
+        self.nmf = nmf.KLdivNMF(n_components=3, tol=1e-4,
             max_iter=200, eps=1.e-8, subit=10)
         self.nmf.components_ = self.H
 
@@ -202,17 +150,17 @@ class TestSparseUpdates(TestUpdates):
 class TestFitTransform(unittest.TestCase):
 
     def setUp(self):
-        self.nmf = nmf.KLdivNMF(n_components=3, init=None, tol=1e-6,
+        self.nmf = nmf.KLdivNMF(n_components=3, tol=1e-6,
             max_iter=200, eps=1.e-8, subit=10)
 
     def test_cv(self):
-        X = random_NN_matrix(10, 5)
+        X = random_NN_matrix((10, 5))
         W, errors = self.nmf.fit_transform(X, return_errors=True)
         # Last errors should be very close
         self.assertTrue(abs(errors[-1] - errors[-2]) < errors[0] * 1.e-2)
 
     def test_zero_error_on_fact_data(self):
-        X = np.dot(random_NN_matrix(5, 2), random_NN_matrix(2, 3))
+        X = np.dot(random_NN_matrix((5, 2)), random_NN_matrix((2, 3)))
         W, errors = self.nmf.fit_transform(X, return_errors=True)
         self.assertTrue(errors[-1] < errors[0] * 1.e-3)
 

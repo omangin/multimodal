@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import scipy.sparse as sp
 
-from multimodal.lib.utils import normalize_features
+from multimodal.lib.array_utils import normalize_features
 from multimodal.evaluation import (evaluate_label_reco,
                                    evaluate_NN_label,
                                    chose_examples)

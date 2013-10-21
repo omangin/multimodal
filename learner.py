@@ -9,18 +9,11 @@ __date__ = '01/2013'
 
 
 from multimodal.lib.nmf import KLdivNMF as NMF
-from multimodal.lib.utils import safe_hstack
-
-
-def learn_dictionary(data, k, iter_nmf=100, verbose=False):
-    nmf = NMF(n_components=k, max_iter=iter_nmf, tol=0, init=None)
-    nmf.fit(data, scale_W=True)
-    return nmf
+from multimodal.lib.array_utils import safe_hstack
 
 
 def fit_coefficients(data_obs, dictionary, iter_nmf=100, verbose=False):
-    nmf_obs = NMF(n_components=dictionary.shape[0], max_iter=iter_nmf,
-            tol=0, init=None)
+    nmf_obs = NMF(n_components=dictionary.shape[0], max_iter=iter_nmf, tol=0)
     nmf_obs.components_ = dictionary
     coefficients = nmf_obs.transform(data_obs, scale_W=True)
     return coefficients
@@ -36,7 +29,6 @@ class MultimodalLearner(object):
         self.k = k
         self.sparseness = sparseness  # data, components, None
         self.sp_coef = sp_coef
-        # Eventually remove dimensions, as it is just used for debugging
 
     def train(self, data_matrices, iterations):
         n_samples = data_matrices[0].shape[0]
@@ -46,8 +38,7 @@ class MultimodalLearner(object):
         # Perform the experiment
         if self.sparseness is not None:
             raise NotImplemented
-        self.nmf_train = NMF(n_components=self.k, max_iter=iterations, tol=0,
-                              init=None)
+        self.nmf_train = NMF(n_components=self.k, max_iter=iterations, tol=0)
         #, sparseness=self.sparseness, sp_coef=self.sp_coef)
         self.nmf_train.fit(Vtrain, scale_W=True)
 

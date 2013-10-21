@@ -16,6 +16,7 @@ import numpy as np
 import scipy.sparse as sp
 
 from multimodal.lib.metrics import generalized_KL
+from multimodal.lib.array_utils import normalize_sum
 from multimodal.lib.sklearn_utils import atleast2d_or_csr, safe_sparse_dot
 
 
@@ -23,12 +24,6 @@ def check_non_negative(X, whom):
     X = X.data if sp.issparse(X) else X
     if (X < 0).any():
         raise ValueError("Negative values in data passed to %s" % whom)
-
-
-def _normalize_sum(a, axis=0, eps=1.e-16):
-    if axis >= len(a.shape):
-        raise ValueError
-    return a / (eps + np.expand_dims(np.sum(a, axis=axis), axis))
 
 
 def _scale(matrix, factors, axis=0):
@@ -138,10 +133,10 @@ class KLdivNMF(object):
       matrix factorization. Nature, 1999
     """
 
-    def __init__(self, n_components=None, init='random', tol=1e-6,
-            max_iter=200, eps=1.e-8, subit=10, random_state=None):
+    def __init__(self, n_components=None, tol=1e-6, max_iter=200, eps=1.e-8,
+                 subit=10, random_state=None):
         self.n_components = n_components
-        self.init = init
+        self._init_dictionary = None
         self.random_state = random_state
         self.tol = tol
         self.max_iter = max_iter
@@ -151,12 +146,13 @@ class KLdivNMF(object):
 
     def _init(self, X):
         n_samples, n_features = X.shape
-        if self.init is None:
-            H_init = _normalize_sum(np.abs(np.random.random(
+        if self._init_dictionary is None:
+            H_init = normalize_sum(np.abs(np.random.random(
                 (self.n_components, n_features))) + .01, axis=1)
         else:
-            assert(self.init.shape == (self.n_components, n_features))
-            H_init = self.init
+            assert(self._init_dictionary.shape
+                   == (self.n_components, n_features))
+            H_init = self._init_dictionary
         W_init = X.dot(H_init.T)
         return W_init, H_init
 
@@ -251,7 +247,7 @@ class KLdivNMF(object):
             # This is only relevant if components are normalized.
             # Not always usefull but might improve convergence speed:
             # Scale W lines to have same sum than X lines
-            W = _scale(_normalize_sum(W, axis=1), X.sum(axis=1), axis=1)
+            W = _scale(normalize_sum(W, axis=1), X.sum(axis=1), axis=1)
         Q = self._Q(X, W, self.components_, eps=eps)
         # update W
         W = self._updated_W(X, W, self.components_, Q=Q)
@@ -290,7 +286,7 @@ class KLdivNMF(object):
         data: array, [n_samples, n_components]
             Transformed data
         """
-        self.init = self.components_
+        self._init_dictionary = self.components_
         params['_fit'] = False
         return self.fit_transform(X, **params)
 
@@ -351,5 +347,5 @@ class KLdivNMF(object):
         if Q is None:
             Q = cls._Q(X, W, H, eps=eps)
         H = np.multiply(H, safe_sparse_dot(W.T, Q))
-        H = _normalize_sum(H, axis=1)
+        H = normalize_sum(H, axis=1)
         return H
