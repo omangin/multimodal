@@ -14,9 +14,15 @@ WAV_DIR = 'WAV'
 WAV_EXT = '.wav'
 
 
-def get_text_node(dom, el_name):
-    txt = dom.getElementsByTagName(el_name)[0].childNodes[0].data
-    return txt.strip()
+def get_text_node(dom, el_name, accept_empty=False):
+    txt_node = dom.getElementsByTagName(el_name)[0].childNodes
+    if len(txt_node) > 0:
+        txt = txt_node[0].data.strip()
+    elif accept_empty:
+        txt = ''
+    else:
+        raise ValueError("Empty text node (%s)." % txt_node)
+    return txt
 
 
 class Record:
@@ -170,7 +176,7 @@ class DataBase:
                 audio = get_text_node(rec, 'audio')
                 tags = [self.tag_id[t.getAttribute('name')]
                         for t in rec.getElementsByTagName('tag')]
-                trans = get_text_node(rec, 'trans')
+                trans = get_text_node(rec, 'trans', accept_empty=True)
                 r = Record(self, spk_id, audio, tags, trans, style)
                 self.records[-1].append(r)
         if sort:
