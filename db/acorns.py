@@ -46,10 +46,11 @@ def load(year, db_file=None, blacklist=False):
         db_file = os.path.join(default_acorns_dir(), default_acorns_file(year))
     db = AcornsDB()
     db.load_from(db_file)
-    for recs, blacklist in zip(db.records,
-                               BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2):
-        for r in blacklist:
-            recs.pop(r)
+    if blacklist:
+        for recs, bl in zip(db.records,
+                            BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2):
+            for r in bl:
+                recs.pop(r)
     return db
 
 
