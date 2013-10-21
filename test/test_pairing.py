@@ -55,9 +55,10 @@ class TestModalityAssociation(TestCase):
 
     @skip("Too long to run each time but good to have!")
     def test_labels_match_on_db(self):
-        sound_labels = get_sound_labels(1)
+        speaker = 1
+        sound_labels = get_sound_labels(speaker)
         motion_labels = get_motion_labels()
-        names, labels, tuples = associate_sound_motion(1)
+        names, labels, tuples = associate_sound_motion(speaker)
         sound_names = names[0]
         sound_idx = [t[0] for t in tuples]
         motion_names = names[1]
