@@ -1,7 +1,7 @@
 import random
 
-from multimodal.db.acorns import load as load_acorns
-from multimodal.db.choreo2 import load as load_choreo
+from .db.acorns import load as load_acorns
+from .db.choreo2 import load as load_choreo
 
 
 def named_labels_to_range(sample_labels, shuffle=False):

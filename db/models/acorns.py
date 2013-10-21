@@ -1,6 +1,6 @@
 import os
 
-from multimodal.db.models.sound import Record, DataBase, XML_DIR, WAV_EXT, dom
+from .sound import Record, DataBase, XML_DIR, WAV_EXT, dom
 
 
 def check_year(year):

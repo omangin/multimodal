@@ -14,8 +14,8 @@ import os
 from scipy.io import loadmat
 import scipy.sparse as sp
 
-from multimodal.local import CONFIG
-from multimodal.db.models.acorns import AcornsDB, check_year
+from ..local import CONFIG
+from .models.acorns import AcornsDB, check_year
 
 
 BLACKLIST_Y1 = [[], [176], [], []]  # Bad records (no label, empty, etc.)

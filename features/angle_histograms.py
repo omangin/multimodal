@@ -13,12 +13,11 @@ to angle and/or angle velocity histogram representations.
 import numpy as np
 from scipy.cluster.vq import kmeans, whiten
 
-from multimodal.lib.transformations import (quaternion_multiply,
-                                            quaternion_inverse,
-                                            euler_from_quaternion)
-from multimodal.lib.utils import delayed_velocities, meta_map
-from multimodal.lib.vector_quantization import get_histos
-from multimodal.lib.kde2d import gaussian_kde_2d
+from ..lib.transformations import (quaternion_multiply, quaternion_inverse,
+                                   euler_from_quaternion)
+from ..lib.utils import delayed_velocities, meta_map
+from ..lib.vector_quantization import get_histos
+from ..lib.kde2d import gaussian_kde_2d
 
 # Note: frame names from ros kinect seems to denote left / right from
 #   the observer point of view.

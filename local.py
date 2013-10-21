@@ -4,7 +4,7 @@
 from os.path import expanduser, join
 
 
-from multimodal.config import Config
+from .config import Config
 
 
 CONFIG = Config()  # Initialize the configuration. This is required.

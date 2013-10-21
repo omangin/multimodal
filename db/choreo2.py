@@ -16,9 +16,9 @@ import os
 
 import numpy as np
 
-from multimodal.local import CONFIG
-from multimodal.db.models.kinect_motion import MotionDatabase
-from multimodal.features.angle_histograms import db_to_VQ_hist_matrix
+from ..local import CONFIG
+from .models.kinect_motion import MotionDatabase
+from ..features.angle_histograms import db_to_VQ_hist_matrix
 
 
 DEFAULT_NB_BINS = 15  # Used to build features

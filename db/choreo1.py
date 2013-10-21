@@ -15,7 +15,7 @@ import json
 
 import numpy as np
 
-from multimodal.local import CONFIG
+from ..local import CONFIG
 
 
 # Names of origin data files (for legacy)

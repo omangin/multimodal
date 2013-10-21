@@ -8,8 +8,8 @@ __date__ = '01/2013'
 """
 
 
-from multimodal.lib.nmf import KLdivNMF as NMF
-from multimodal.lib.array_utils import safe_hstack
+from .lib.nmf import KLdivNMF as NMF
+from .lib.array_utils import safe_hstack
 
 
 def fit_coefficients(data_obs, dictionary, iter_nmf=100, verbose=False):

@@ -4,6 +4,7 @@
 
 import os
 import sys
+sys.path.append(os.path.abspath(os.path.join(__file__, '../../../..')))
 
 from multimodal.db.acorns import (AcornsDB,
                                   default_acorns_dir,

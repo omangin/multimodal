@@ -15,9 +15,9 @@ import sys
 import numpy as np
 import scipy.sparse as sp
 
-from multimodal.lib.metrics import generalized_KL
-from multimodal.lib.array_utils import normalize_sum
-from multimodal.lib.sklearn_utils import atleast2d_or_csr, safe_sparse_dot
+from .metrics import generalized_KL
+from .array_utils import normalize_sum
+from .sklearn_utils import atleast2d_or_csr, safe_sparse_dot
 
 
 def check_non_negative(X, whom):
