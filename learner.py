@@ -26,6 +26,7 @@ class MultimodalLearner(object):
         self.mod = modalities  # Names of the modalities
         self.dim = dimensions  # Dimensions of modalities
         self.coef = coefficients  # Coefficients used to compensate
+                                  # between modalities
         self.k = k
         self.sparseness = sparseness  # data, components, None
         self.sp_coef = sp_coef
