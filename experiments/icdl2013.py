@@ -14,8 +14,6 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(__file__, '../../..')))
 
-import numpy as np
-
 from multimodal.db.choreo2 import load_features as load_motion
 from multimodal.db.acorns import load_features as load_sound
 from multimodal.lib.logger import Logger
@@ -38,8 +36,12 @@ PARAMS = {
     'iter_test': 50,
     'k': 50,
     }
-DEBUG = False
 LOGGER.store_global('params', PARAMS)
+
+DEBUG = True
+if len(sys.argv) > 1 and sys.argv[1] == '--debug':
+    DEBUG = True
+    sys.argv.pop(1)
 LOGGER.store_global('debug', DEBUG)
 
 if len(sys.argv) > 1:
@@ -59,85 +61,84 @@ LOGGER.store_global('label-pairing', label_association)
 LOGGER.store_global('sample-pairing', assoc_idx)
 N_LABELS = len(label_association[0])
 # Align data
-Y = Xsound[[i[0] for i in assoc_idx]]
-X = Xmotion[[i[1] for i in assoc_idx]]
+Xs = {'sound': Xsound[[i[0] for i in assoc_idx]],
+      'motion': Xmotion[[i[1] for i in assoc_idx]]}
+MODALITIES = Xs.keys()
 
 if DEBUG:  # To check for stupid errors
     print('WARNING: Debug mode active, using subset of the database')
-    X = X[:200, :11]
-    Y = Y[:200, :10]
+    for mod in Xs:
+        Xs[mod] = Xs[mod][:200, :11]
     labels = labels[:200]
 # Extract examples for evaluation
 examples = chose_examples([l for l in labels])
 others = [i for i in range(len(labels)) if i not in examples]
-Xex = X[examples, :]
-Yex = Y[examples, :]
-X = X[others, :]
-Y = Y[others, :]
+Xex = {mod: Xs[mod][examples, :] for mod in MODALITIES}
+X = {mod: Xs[mod][others, :] for mod in MODALITIES}
+n_feats = {mod: X[mod].shape[1] for mod in MODALITIES}
 ex_labels = [labels[i] for i in examples]
 labels = [labels[i] for i in others]
 n_samples = len(labels)
-n_feat_motion = X.shape[1]
-n_feat_sound = Y.shape[1]
-# Also build label matrix
-Zex = np.eye(N_LABELS)
-Zex = Zex[ex_labels, :]
 
 # Safety...
 if not DEBUG:
     assert(ex_labels == range(N_LABELS))
-assert(n_samples == X.shape[0])
-assert(n_samples == Y.shape[0])
+for mod in MODALITIES:
+    assert(n_samples == X[mod].shape[0])
 assert(all([l in range(10) for l in labels]))
 
 
 for train, test in random_split(n_samples, .1):
-#for train, test in [random_split(n_samples, .1).next()]:
+#for train, test in [random_split(n_samples, .1).next()]:  # for a single run
 #for train, test in leave_one_out(n_samples):
     LOGGER.new_experiment()
     # Extract train and test matrices
-    Xtrain = X[train, :]
-    Ytrain = Y[train, :]
-    Xtest = X[test, :]
-    Ytest = Y[test, :]
+    Xtrain = {mod: X[mod][train, :] for mod in MODALITIES}
+    Xtest = {mod: X[mod][test, :] for mod in MODALITIES}
     test_labels = [labels[t] for t in test]
 
     # Init Learner
     learner = MultimodalLearner(
-            ['motion', 'sound'],
-            [n_feat_motion, n_feat_sound],
-            [PARAMS['motion_coef'], PARAMS['sound_coef']],
-            PARAMS['k']
-            )
+            MODALITIES,
+            [n_feats[mod] for mod in MODALITIES],
+            [PARAMS["%s_coef" % mod] for mod in MODALITIES],
+            PARAMS['k'])
     # Train
-    learner.train([Xtrain, Ytrain], PARAMS['iter_train'])
-    # Get coefs
-    coefs_motion = learner.reconstruct_internal(
-            'motion', Xtest, PARAMS['iter_test'])
-    coefs_motion_ex = learner.reconstruct_internal(
-            'motion', Xex, PARAMS['iter_test'])
-    coefs_sound = learner.reconstruct_internal(
-            'sound', Ytest, PARAMS['iter_test'])
-    coefs_sound_ex = learner.reconstruct_internal(
-            'sound', Yex, PARAMS['iter_test'])
+    learner.train([Xtrain[mod] for mod in MODALITIES], PARAMS['iter_train'])
 
-    # Get other modalities
-    motion_as_sound = learner.reconstruct_modality('sound', coefs_motion)
-    motion_as_sound_ex = learner.reconstruct_modality('sound', coefs_motion_ex)
-    sound_as_motion = learner.reconstruct_modality('motion', coefs_sound)
-    sound_as_motion_ex = learner.reconstruct_modality('motion', coefs_sound_ex)
+    # Get internal coefs
+    internal_test = {mod: learner.reconstruct_internal(
+        mod, Xtest[mod], PARAMS['iter_test']) for mod in MODALITIES}
+    internal_ex = {mod: learner.reconstruct_internal(
+                mod, Xex[mod], PARAMS['iter_test']) for mod in MODALITIES}
+
+    # Reconstruct one modality from an other
+    Xreco_test = {}
+    Xreco_ex = {}
+    for (m1, m2) in [('motion', 'sound'), ('sound', 'motion')]:
+        key = "%s_as_%s" % (m1, m2)
+        Xreco_test[key] = learner.reconstruct_modality(m2, internal_test[m1])
+        Xreco_ex[key] = learner.reconstruct_modality(m2, internal_ex[m1])
 
     # Evaluate coefs
-    for mod, coefs, coefs_ex in [
-            ('motion', coefs_motion, coefs_motion_ex),
-            ('motion2sound', coefs_motion, coefs_sound_ex),
-            ('sound', coefs_sound, coefs_sound_ex),
-            ('sound2motion', coefs_sound, coefs_motion_ex),
-            ('motion2sound_sound', motion_as_sound, Yex),
-            ('motion2sound_motion', Xtest, sound_as_motion_ex),
-            ('sound2motion_motion', sound_as_motion, Xex),
-            ('sound2motion_sound', Ytest, motion_as_sound_ex),
-            ]:
+    to_test = []
+    for (mod1, mod2) in [('motion', 'sound'), ('sound', 'motion')]:
+        # Evaluate recognition in single modality
+        to_test.append((mod1, internal_test[mod1], internal_ex[mod1]))
+        # Evaluate one modality against the other:
+        # - on internal coefficients
+        to_test.append((mod1 + '2' + mod2, internal_test[mod1],
+                        internal_ex[mod2]))
+        # - original data for test mod1
+        #   compared to reconstructed mod1 from mod2 reference examples
+        to_test.append(("{}2{}_{}".format(mod1, mod2, mod1),
+                        Xtest[mod1], Xreco_ex[mod2 + '_as_' + mod1]))
+        # - reconstructed mod2 from mod1 test examples
+        #   compared to original for mod2 reference examples
+        to_test.append(("{}2{}_{}".format(mod1, mod2, mod2),
+                        Xreco_test[mod1 + '_as_' + mod2], Xex[mod2]))
+
+    for mod, coefs, coefs_ex in to_test:
         for metric, suffix in zip([kl_div, rev_kl_div, frobenius, cosine_diff],
                                   ['', '_bis', '_frob', '_cosine']):
             # Perform recognition
@@ -146,21 +147,35 @@ for train, test in random_split(n_samples, .1):
             LOGGER.store_result("score_%s%s" % (mod, suffix),
                                 found_labels_to_score(test_labels, found))
 
-#    for mod in ['motion', 'sound']:
-#        # Evaluate various sparseness
-#        LOGGER.store_result("sparseness_dico_%s" % mod,
-#                            hoyer_sparseness(learner.get_dico(modality=mod)))
-#        LOGGER.store_result("sparseness_coef_%s" % mod,
-#                            hoyer_sparseness(coefs))
 
-    print '.',
-    sys.stdout.flush()
-print
+def get_key(mod1, mod2, mod_comp, metric_key):
+    return "score_{}2{}{}{}".format(
+            mod1, mod2,
+            '' if mod_comp == 'internal' else '_' + mod_comp,
+            metric_key)
 
 
-# Note Random_split creates subset of different sizes (actually only the last
-# one might be smaller) which makes the average not fully meaningful.
-LOGGER.print_all_results()
+# Print result table
+WIDTH = 13
+table = " ".join(["{}" for _dummy in range(6)])
+
+print('-' * (WIDTH * 6 + 5))
+print('Modalities'.center(WIDTH * 3 + 2)
+      + 'Score: avg (std)'.center(WIDTH * 3 + 2))
+print('-' * (WIDTH * 3 + 2) + ' ' + '-' * (WIDTH * 3 + 2))
+print table.format(*[s.center(WIDTH)
+                     for s in ['Test', 'Reference', 'Comparison',
+                               'KL', 'Euclidean', 'Cosine']])
+print(' '.join(['-' * WIDTH] * 6))
+for mods in [('sound', 'motion'), ('motion', 'sound')]:
+    for mod_comp in ['internal', 'motion', 'sound']:
+        mod_str = [mods[0].center(WIDTH), mods[1].center(WIDTH),
+                   mod_comp.center(WIDTH)]
+        res_str = [("%.3f (%.3f)" % LOGGER.get_stats(get_key(mods[0], mods[1],
+                                                     mod_comp, metr)))
+                   for metr in ['', '_frob', '_cosine']]
+        print table.format(*[s.center(WIDTH) for s in (mod_str + res_str)])
+print('-' * (WIDTH * 6 + 5))
 
 
 if out_file is not None:

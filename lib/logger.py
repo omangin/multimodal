@@ -59,11 +59,15 @@ class Logger(object):
     def get_last_value(self, key):
         return self.exps[-1][key]
 
+    def get_stats(self, key):
+        vals = self.get_values(key)
+        return (np.average(vals), np.std(vals))
+
     def print_result(self, key, text=None):
         if text is None:
             text = key
-        vals = self.get_values(key)
-        print("%s: %g (std dev.: %g)" % (text, np.average(vals), np.std(vals)))
+        avg, std = self.get_stats(key)
+        print("%s: %g (std dev.: %g)" % (text, avg, std))
 
     def print_all_results(self):
         for k in self.result_keys:

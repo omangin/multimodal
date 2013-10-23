@@ -221,8 +221,8 @@ class KLdivNMF(object):
 
             W = self._update(X, W)
 
-        if n_iter == self.max_iter:
-            sys.stderr.write("Iteration limit reached during fit\n")
+        if n_iter == self.max_iter and tol > 0:
+            sys.stderr.write("Warning: Iteration limit reached during fit\n")
 
         if return_errors:
             return W, errors
