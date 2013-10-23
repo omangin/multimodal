@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from multimodal.lib.array_utils import normalize_sum
+from multimodal.lib.array_utils import normalize_sum, GrowingLILMatrix
 
 
 class TestNormalizeSum(unittest.TestCase):
@@ -56,3 +56,45 @@ class TestNormalizeSum(unittest.TestCase):
         a[1, :] *= 0
         norm = normalize_sum(a, axis=1)
         assert(not np.any(np.isnan(norm)))
+
+
+class TestGrowingLIL(unittest.TestCase):
+
+    def get_random_with_zeros(self, shape):
+        m = np.random.random(shape)
+        m *= (m < .5)
+        return m
+
+    def test_new_dimension(self):
+        m = GrowingLILMatrix()
+        self.assertEqual(m.shape, (0, 0))
+        m.add_row(self.get_random_with_zeros((5)))
+        self.assertEqual(m.shape, (1, 5))
+        m.add_row(self.get_random_with_zeros((6)))
+        self.assertEqual(m.shape, (2, 6))
+        m.add_row(self.get_random_with_zeros((6)))
+        self.assertEqual(m.shape, (3, 6))
+
+    def test_new_values(self):
+        m = GrowingLILMatrix()
+        row1 = self.get_random_with_zeros((6))
+        row1[5] = 0
+        row1_cut = row1[:5]
+        m.add_row(row1_cut)
+        np.testing.assert_equal(m.todense(), np.array([row1_cut]))
+        row2 = self.get_random_with_zeros((6))
+        m.add_row(row2)
+        np.testing.assert_equal(m.todense(), np.array([row1, row2]))
+
+    def test_fromat(self):
+        m = GrowingLILMatrix()
+        self.assertEqual(m.format, 'lil')
+        m.add_row(self.get_random_with_zeros((6)))
+        self.assertEqual(m.format, 'lil')
+
+    def test_to_csc(self):
+        m = GrowingLILMatrix()
+        m.add_row(self.get_random_with_zeros((6)))
+        m.add_row(self.get_random_with_zeros((6)))
+        np.testing.assert_almost_equal(m.tocsc().todense(), m.todense())
+        np.testing.assert_almost_equal(m.tocsr().todense(), m.todense())

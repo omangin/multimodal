@@ -1,0 +1,44 @@
+#!/usr/bin/env python2
+import os
+
+from multimodal.db.objects import ObjectDB, get_default_db_file
+
+
+DB_FILE = get_default_db_file(extension=False)
+SOURCE_FILE = os.path.join(os.path.dirname(DB_FILE), 'stat_one_obj_no_hand')
+OBJ_NAMES = {
+    0: 'hand',
+    1: 'blue octopus',
+    2: 'red pooh',
+    3: 'pink octopus',
+    4: 'yellow car',
+    5: 'blue and yellow whale',
+    6: 'blue-eyes-green-yellow',
+    7: 'orange fish',
+    8: 'brown and white squirrel',
+    9: 'mouse?',
+    10: 'dark green and white cube',
+    11: 'blue on red wagon',
+    13: 'white bottle',
+    14: 'ketchup bottle',
+    16: 'donkey',
+    20: 'pink moose',
+    21: 'orangina can',
+    25: 'multicolor ball',
+    26: 'giraffe',
+    27: 'green car',
+    28: 'red hammer',
+    29: 'blue rake',
+    30: 'green spade',
+    32: 'light green box',
+}
+
+
+if os.path.exists(DB_FILE):
+    print ("Aborting, destination file exists (%s)." % DB_FILE)
+else:
+    DB = ObjectDB.build_from(SOURCE_FILE, object_names=OBJ_NAMES,
+                             verbosity='verbose')
+    DB.save(os.path.abspath(os.path.dirname(DB_FILE)),
+            os.path.basename(DB_FILE))
+    print ("Written: %s" % DB_FILE)

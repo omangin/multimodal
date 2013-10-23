@@ -38,3 +38,29 @@ def normalize_features(X):
         y /= (1. * (sums == 0) + sums)[np.newaxis, :]
     # Remove columns of 0s
     return y[:, sums.nonzero()[0]]
+
+
+class GrowingLILMatrix(sp.lil_matrix):
+
+    def __init__(self):
+        sp.lil_matrix.__init__(self, (1, 1))
+        # By default format = self.__class__.__name__[:3] which is unknown
+        # from sparse matrix printer.
+        self.format = 'lil'
+        self._shape = (0, 0)
+
+    def add_row(self, row):
+        """Adds a row to the matrix from a list or array."""
+        sparse_row = sp.lil_matrix(row)
+        if self._shape == (0, 0):  # Empty GrowingLILMatrix
+            # Init matrix with row
+            self._shape = sparse_row._shape
+            self.rows = sparse_row.rows
+            self.data = sparse_row.data
+        else:
+            # Update shape
+            nb_col = max(len(row), self.shape[1])
+            self._shape = (1 + self._shape[0], nb_col)
+            # Add the row
+            self.rows = np.concatenate([self.rows, sparse_row.rows[[0]]])
+            self.data = np.concatenate([self.data, sparse_row.data[[0]]])
