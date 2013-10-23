@@ -31,14 +31,13 @@ PARAMS = {
     'acorns_speaker': 0,
     'motion_coef': 1.,  # Data normalization
     'sound_coef': .0008,  # Data normalization
-    #'language_coef': 50,
     'iter_train': 50,
     'iter_test': 50,
     'k': 50,
     }
 LOGGER.store_global('params', PARAMS)
 
-DEBUG = True
+DEBUG = False
 if len(sys.argv) > 1 and sys.argv[1] == '--debug':
     DEBUG = True
     sys.argv.pop(1)
