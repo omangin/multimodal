@@ -131,12 +131,12 @@ def delayed_velocities(delay, positions, padding='circular'):
 # Tools to split between train and test sets (for cross-validation, etc.)
 def random_split(n_samples, ratio):
     nb_test = int(ratio * n_samples)
-    # Generate train and test set
     indices = range(n_samples)
     np.random.shuffle(indices)
-    for i in range(n_samples)[::nb_test]:
+    # Generate train and test sets
+    for i in range(0, nb_test * int(1. / ratio), nb_test):
         test = indices[i:(i + nb_test)]
-        train = indices[:i] + indices[(i + nb_test + 1):]
+        train = indices[:i] + indices[(i + nb_test):]
         yield train, test
 
 
