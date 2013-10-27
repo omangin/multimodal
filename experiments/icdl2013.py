@@ -12,8 +12,9 @@
 
 import sys
 
-from multimodal.experiment import (TwoModalitiesExperiment, Choreo2Loader,
-                                   AcornsLoader)
+from multimodal.experiment import TwoModalitiesExperiment
+from multimodal.db.choreo2 import Choreo2Loader
+from multimodal.db.acorns import Year1Loader as AcornsLoader
 
 
 DEBUG = False

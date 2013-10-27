@@ -1,9 +1,5 @@
 from itertools import product
 
-from .db.acorns import load as load_acorns
-from .db.acorns import load_features as load_acorns_features
-from .db.choreo2 import load as load_choreo2
-from .db.choreo2 import load_features as load_choreo2_features
 from .lib.logger import Logger
 from .lib.metrics import kl_div, rev_kl_div, cosine_diff, frobenius
 from .lib.utils import random_split
@@ -190,29 +186,3 @@ class TwoModalitiesExperiment(Experiment):
                 print table.format(*[s.center(width)
                                      for s in (mod_str + res_str)])
         print('-' * (width * 6 + 5))
-
-
-# TODO: Maybe the loaders should move to datasets ?
-
-class Choreo2Loader(object):
-
-    def get_data(self):
-        return load_choreo2_features()
-
-    def get_labels(self):
-        motion_db = load_choreo2(verbose=False)
-        motion_names = motion_db.label_descriptions
-        return [motion_names[r[1][0]] for r in motion_db.records]
-
-
-class AcornsLoader(object):
-
-    def __init__(self, speaker):
-        self.speaker = speaker
-
-    def get_data(self):
-        return load_acorns_features(1, self.speaker)
-
-    def get_labels(self):
-        db = load_acorns(1, blacklist=True)
-        return [db.tags[r.tags[0]] for r in db.records[self.speaker]]

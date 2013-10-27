@@ -18,6 +18,7 @@ import numpy as np
 
 from ..local import CONFIG
 from .models.kinect_motion import MotionDatabase
+from .models.loader import Loader
 from ..features.angle_histograms import db_to_VQ_hist_matrix
 
 
@@ -42,6 +43,21 @@ def load(db_file=None, verbose=False):
 load.__doc__ = MotionDatabase.load_from_npz.__doc__
 
 
+class Choreo2Loader(Loader):
+
+    def get_data(self):
+        X = load_features()
+        self.check_n_samples(X.shape[0])
+        return X
+
+    def get_labels(self):
+        db = load(verbose=False)
+        motion_names = db.label_descriptions
+        self.check_n_samples(len(db.records))
+        return [motion_names[r[1][0]] for r in db.records]
+
+
+# Deprecated
 def load_features_and_labels(db_file=None, feat_file=None):
     db = load(db_file=db_file)
     X = load_features(feat_file=feat_file)

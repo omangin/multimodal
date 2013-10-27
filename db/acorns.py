@@ -15,6 +15,7 @@ from scipy.io import loadmat
 import scipy.sparse as sp
 
 from ..local import CONFIG
+from .models.loader import Loader
 from .models.acorns import AcornsDB, check_year
 
 
@@ -54,6 +55,25 @@ def load(year, db_file=None, blacklist=False):
     return db
 
 
+class Year1Loader(Loader):
+
+    def __init__(self, speaker):
+        super(Year1Loader, self).__init__()
+        self.speaker = speaker
+
+    def get_data(self):
+        X = load_features(1, self.speaker, blacklist=True)
+        self.check_n_samples(X.shape[0])
+        return X
+
+    def get_labels(self):
+        db = load(1, blacklist=True)
+        records = db.records[self.speaker]
+        self.check_n_samples(len(records))
+        return [db.tags[r.tags[0]] for r in records]
+
+
+# Deprecated for year 1
 def load_features_and_labels(year, speaker, blacklist=False, db_file=None):
     db = load(year, db_file=db_file, blacklist=blacklist)
     labels = [r.tags for r in db.records[speaker]]
