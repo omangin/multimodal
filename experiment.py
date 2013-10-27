@@ -1,3 +1,5 @@
+from itertools import product
+
 from .db.acorns import load as load_acorns
 from .db.acorns import load_features as load_acorns_features
 from .db.choreo2 import load as load_choreo2
@@ -24,7 +26,15 @@ class Experiment(object):
         self.logger = Logger()
 
 
+TEST = 0
+EX = 1
+
+INTERNAL = -1
+
+
 class TwoModalitiesExperiment(Experiment):
+
+    n_modalities = 2
 
     def __init__(self, loaders, k, coefs, iter_train, iter_test, debug=False):
         super(TwoModalitiesExperiment, self).__init__()
@@ -50,28 +60,25 @@ class TwoModalitiesExperiment(Experiment):
                      for i, x in enumerate(raw_data)]
         self.logger.store_global('label-pairing', self.label_association)
         self.logger.store_global('sample-pairing', assoc_idx)
-
-        if self.debug:
+        if self.debug:  # Reduce size of data for quick execution
             self.logger.log(
                     'WARNING: Debug mode active, using subset of the database')
             self.data = [x[:200, :11] for x in self.data]
             self.labels_all = self.labels_all[:200]
-
         # Extract examples for evaluation
         self.examples = chose_examples([l for l in self.labels_all])
+        self.logger.store_global('examples', self.examples)
         self.others = [i for i in range(len(self.labels_all))
                          if i not in self.examples]
         self.data_ex = [x[self.examples, :] for x in self.data]
         self.data = [x[self.others, :] for x in self.data]
         self.labels_ex = [self.labels_all[i] for i in self.examples]
         self.labels = [self.labels_all[i] for i in self.others]
-
+        self.run_generator = random_split(self.n_samples, .1)
         # Safety...
         assert(set(self.labels_ex) == set(self.labels_all))
         assert(all([self.n_samples == x.shape[0] for x in self.data]))
         assert(all([l in range(10) for l in self.labels]))
-
-        self.run_generator = random_split(self.n_samples, .1)
 
     @property
     def n_features(self):
@@ -100,58 +107,62 @@ class TwoModalitiesExperiment(Experiment):
         ## Train
         learner.train(data_train, self.iter_train)
         ## Test
-        # Get internal coefs
-        internal_test = [learner.reconstruct_internal(mod, x, self.iter_test)
-                         for mod, x in zip(self.modalities, data_test)]
-        internal_ex = [learner.reconstruct_internal(mod, x, self.iter_test)
-                       for mod, x in zip(self.modalities, self.data_ex)]
-        # Reconstruct one modality from an other
-        Xreco_test = {}
-        Xreco_ex = {}
-        for (m1, m2) in [(0, 1), (1, 0)]:
-            key = "%s_as_%s" % tuple(self.modalities[m] for m in (m1, m2))
-            Xreco_test[key] = learner.reconstruct_modality(self.modalities[m2],
-                                                           internal_test[m1])
-            Xreco_ex[key] = learner.reconstruct_modality(self.modalities[m2],
-                                                         internal_ex[m1])
-        # Evaluate coefs
-        to_test = []
-        for (mod1, mod2) in [(0, 1), (1, 0)]:
-            mod_str1 = self.modalities[mod1]
-            mod_str2 = self.modalities[mod2]
-            # Evaluate recognition in single modality
-            to_test.append((mod_str1, internal_test[mod1], internal_ex[mod1]))
-            # Evaluate one modality against the other:
-            # - on internal coefficients
-            to_test.append((mod_str1 + '2' + mod_str2,
-                            internal_test[mod1], internal_ex[mod2]))
-            # - original data for test mod1
-            #   compared to reconstructed mod1 from mod2 reference examples
-            to_test.append(("{}2{}_{}".format(mod_str1, mod_str2, mod_str1),
-                           data_test[mod1],
-                           Xreco_ex["%s_as_%s" % (mod_str2, mod_str1)]))
-            # - reconstructed mod2 from mod1 test examples
-            #   compared to original for mod2 reference examples
-            to_test.append(("{}2{}_{}".format(mod_str1, mod_str2, mod_str2),
-                           Xreco_test["%s_as_%s" % (mod_str1, mod_str2)],
-                            self.data_ex[mod2]))
-
-        for mod, coefs, coefs_ex in to_test:
+        # Usage:
+        # transformed_data_test/ex[original modality][destination modality]
+        transformed_data_test = self._get_all_transformations(learner,
+                                                              data_test)
+        transformed_data_ex = self._get_all_transformations(learner,
+                                                            self.data_ex)
+        # For each combination of modalities:
+        to_test = product(range(self.n_modalities),
+                          range(self.n_modalities),
+                          [-1] + range(self.n_modalities))
+        for (mod1, mod2, mod_cmp) in to_test:
             for metric, suffix in zip(
                     [kl_div, rev_kl_div, frobenius, cosine_diff],
                     ['', '_bis', '_frob', '_cosine']):
                 # Perform recognition
-                found = classify_NN(coefs, coefs_ex, self.labels_ex, metric)
+                found = classify_NN(transformed_data_test[mod1][mod_cmp],
+                                    transformed_data_ex[mod2][mod_cmp],
+                                    self.labels_ex, metric)
                 # Conpute score
-                self.logger.store_result("score_%s%s" % (mod, suffix),
-                                         found_labels_to_score(test_labels,
-                                                               found))
+                self.logger.store_result(
+                        self._get_score_key(mod1, mod2, mod_cmp, suffix),
+                        found_labels_to_score(test_labels, found))
 
-    def _get_result(self, mod1, mod2, mod_comp, metric_key):
-        key = "score_{}2{}{}{}".format(
+    def _get_all_transformations(self, learner, data_set):
+        """Computes all transformations of data.
+        Returns list of lists of lists such that:
+            result[input modality][output modality]
+        Does not transform data if not necessary.
+        """
+        # First compute internals
+        internals = self._get_all_internals(learner, data_set)
+        # Compute all transformations
+        out = [[[] for _dum in self.modalities]
+               for _my in self.modalities]
+        for in_mod in range(self.n_modalities):
+            out[in_mod][in_mod] = data_set[in_mod]  # Nothing to do.
+            for out_mod in range(self.n_modalities):
+                if out_mod != in_mod:
+                    out[in_mod][out_mod] = learner.reconstruct_modality(
+                            self.modalities[out_mod], internals[in_mod])
+            out[in_mod].append(internals[in_mod])
+        return out
+
+    def _get_all_internals(self, learner, data_set):
+        return [learner.reconstruct_internal(self.modalities[mod],
+                                             x, self.iter_test)
+                for mod, x in enumerate(data_set)]
+
+    def _get_score_key(self, mod1, mod2, mod_cmp, metric):
+        return "score_{}2{}{}{}".format(
                 self.modalities[mod1], self.modalities[mod2],
-                '' if mod_comp == 'internal' else '_' + mod_comp,
-                metric_key)
+                '' if mod_cmp == INTERNAL else '_' + self.modalities[mod_cmp],
+                metric)
+
+    def _get_result(self, mod1, mod2, mod_cmp, metric_key):
+        key = self._get_score_key(mod1, mod2, mod_cmp, metric_key)
         return self.logger.get_stats(key)
 
     def print_result_table(self):
@@ -166,13 +177,14 @@ class TwoModalitiesExperiment(Experiment):
                             for s in ['Test', 'Reference', 'Comparison',
                                       'KL', 'Euclidean', 'Cosine']])
         print(' '.join(['-' * width] * 6))
-        for mods in [(0, 1), (1, 0)]:
-            for mod_comp in (['internal'] + self.modalities):
-                mod_str = [self.modalities[mods[0]].center(width),
-                           self.modalities[mods[1]].center(width),
-                           mod_comp.center(width)]
+        for mod1, mod2 in [(0, 1), (1, 0)]:
+            for mod_comp, mod_comp_str in ([(-1, 'internal')]
+                                           + list(enumerate(self.modalities))):
+                mod_str = [self.modalities[mod1].center(width),
+                           self.modalities[mod2].center(width),
+                           mod_comp_str.center(width)]
                 res_str = [("%.3f (%.3f)"
-                            % self._get_result(mods[0], mods[1],
+                            % self._get_result(mod1, mod2,
                                                mod_comp, metr))
                            for metr in ['', '_frob', '_cosine']]
                 print table.format(*[s.center(width)
