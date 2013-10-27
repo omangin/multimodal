@@ -2,8 +2,7 @@ from unittest import TestCase, skip
 
 
 from multimodal.pairing import (associate, flatten, organize_by_values,
-                                associate_labels, associate_sound_motion,
-                                get_sound_labels, get_motion_labels)
+                                associate_labels)
 
 
 class TestVar(TestCase):
@@ -55,10 +54,15 @@ class TestModalityAssociation(TestCase):
 
     @skip("Too long to run each time but good to have!")
     def test_labels_match_on_db(self):
+        from multimodal.experiment import AcornsLoader, Choreo2Loader
         speaker = 1
-        sound_labels = get_sound_labels(speaker)
-        motion_labels = get_motion_labels()
-        names, labels, tuples = associate_sound_motion(speaker)
+        sound_loader = AcornsLoader(speaker)
+        motion_loader = Choreo2Loader()
+        sound_labels = sound_loader.get_labels()
+        motion_labels = motion_loader.get_labels()
+        raw_labels = [loader.get_labels() for loader in [sound_loader,
+                                                         motion_loader]]
+        names, labels, tuples = associate_labels(raw_labels)
         sound_names = names[0]
         sound_idx = [t[0] for t in tuples]
         motion_names = names[1]
