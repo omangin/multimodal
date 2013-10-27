@@ -31,7 +31,10 @@ class Logger(object):
                 and self.result_keys == other.result_keys
                 )
 
-    def new_experiment(self):
+    def log(self, msg):
+        print msg
+
+    def new_run(self):
         self.exps.append({})
 
     def store_global(self, key, value):

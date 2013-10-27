@@ -1,8 +1,5 @@
 import random
 
-from .db.acorns import load as load_acorns
-from .db.choreo2 import load as load_choreo
-
 
 def named_labels_to_range(sample_labels, shuffle=False):
     names = list(set(sample_labels))
@@ -49,18 +46,3 @@ def associate_labels(labels_by_modality, shuffle=False):
     associated = associate(by_labels)
     new_labels = [[i] * len(l) for i, l in enumerate(associated)]
     return names, flatten(new_labels), flatten(associated)
-
-
-def get_sound_labels(speaker):
-    db = load_acorns(1, blacklist=True)
-    return [db.tags[r.tags[0]] for r in db.records[speaker]]
-
-
-def get_motion_labels():
-    motion_db = load_choreo(verbose=False)
-    motion_names = motion_db.label_descriptions
-    return [motion_names[r[1][0]] for r in motion_db.records]
-
-
-def associate_sound_motion(speaker):
-    return associate_labels([get_sound_labels(speaker), get_motion_labels()])
