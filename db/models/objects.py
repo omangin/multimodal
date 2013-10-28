@@ -3,6 +3,7 @@ import re
 import json
 from collections import OrderedDict
 
+import numpy as np
 from scipy.io import loadmat, savemat
 
 from ...lib.array_utils import GrowingLILMatrix
@@ -86,6 +87,7 @@ class ObjectDB(object):
     def __init__(self, object_names=None):
         self.frames = []
         self.histos = [GrowingLILMatrix() for dummy in FEATURES]
+        self.histos_by_frame = [None for dummy in FEATURES]
         self.object_names = object_names
 
     def add_frame(self, frame):
@@ -105,10 +107,34 @@ class ObjectDB(object):
         d['frames'] = [frame.to_dict() for frame in self.frames]
         with open(meta_file, 'w') as f:
             json.dump(d, f, indent=2)
-        savemat(data_file, dict(zip(FEATURES, self.histos)))
+        matrices = dict(zip(FEATURES, self.histos))
+        matrices.update(zip(map('by_frame_'.__add__, FEATURES),
+                            self.histos_by_frame))
+        savemat(data_file, matrices)
 
-    def get_histo_matrix(self, histo_type):
+    def get_histos_matrix(self, histo_type):
         return self.histos[FEATURES_INDEX[histo_type]]
+
+    def get_histos_matrix_by_frame(self, histo_type):
+        return self.histos_by_frame[FEATURES_INDEX[histo_type]]
+
+    def _compute_histos_matrix_by_frame(self, histo_type):
+        """Same as get_histo_matrix but averages histograms
+           from the same frame.
+        """
+        # Index of first histogram of each frame
+        idx_fst = np.cumsum([len(f.views) for f in self.frames])
+        idx_fst = np.roll(idx_fst, 1)
+        idx_fst[0] = 0
+        # Collect only first histo of each frame
+        orig_histos = self.get_histos_matrix(histo_type).tocsc()
+        histos = orig_histos[idx_fst, :].tolil()
+        # Collect and average other histos by frame
+        for i, (j, f) in zip(idx_fst, enumerate(self.frames)):
+            if len(f.views) > 1:
+                new_histo = orig_histos[i:(i + len(f.views)), :].mean(axis=0)
+                histos[j, :] = new_histo
+        self.histos_by_frame[FEATURES_INDEX[histo_type]] = histos.tocsc()
 
     @classmethod
     def build_from(cls, path, object_names=None, verbosity='quiet'):
@@ -121,7 +147,7 @@ class ObjectDB(object):
         with open(path, 'r') as f:
             frames = [Frame.from_line(l) for l in f.readlines()
                       if not l.isspace()]
-        # Parse all frames
+        # Parse data files for each frames
         skipped = 0
         for f in frames:
             try:
@@ -139,6 +165,10 @@ class ObjectDB(object):
                           % f.filename)
         if skipped > 0 and verbosity is not 'silent':
             print "Skipped %d files." % skipped
+        for feat in FEATURES:
+            if verbosity is not 'silent':
+                print "Grouping histograms by frame for %s features..." % feat
+            db._compute_histos_matrix_by_frame(feat)
         return db
 
     @classmethod
@@ -153,4 +183,6 @@ class ObjectDB(object):
                 data = loadmat(os.path.join(os.path.dirname(path),
                                             meta['data_file']))
                 db.histos = [data[feat] for feat in FEATURES]
+                db.histos_by_frame = [data['by_frame_' + feat]
+                                      for feat in FEATURES]
             return db

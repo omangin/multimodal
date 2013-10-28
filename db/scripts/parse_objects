@@ -6,32 +6,31 @@ from multimodal.db.objects import ObjectDB, get_default_db_file
 
 DB_FILE = get_default_db_file(extension=False)
 SOURCE_FILE = os.path.join(os.path.dirname(DB_FILE), 'stat_one_obj_no_hand')
-OBJ_NAMES = {
-    0: 'hand',
-    1: 'blue octopus',
-    2: 'red pooh',
-    3: 'pink octopus',
-    4: 'yellow car',
-    5: 'blue and yellow whale',
-    6: 'blue-eyes-green-yellow',
-    7: 'orange fish',
-    8: 'brown and white squirrel',
-    9: 'mouse?',
-    10: 'dark green and white cube',
-    11: 'blue on red wagon',
-    13: 'white bottle',
-    14: 'ketchup bottle',
-    16: 'donkey',
-    20: 'pink moose',
-    21: 'orangina can',
-    25: 'multicolor ball',
-    26: 'giraffe',
-    27: 'green car',
-    28: 'red hammer',
-    29: 'blue rake',
-    30: 'green spade',
-    32: 'light green box',
-}
+OBJ_NAMES = [None for _dummy in range(33)]
+OBJ_NAMES[0] = 'hand'
+OBJ_NAMES[1] = 'blue octopus'
+OBJ_NAMES[2] = 'red pooh'
+OBJ_NAMES[3] = 'pink octopus'
+OBJ_NAMES[4] = 'yellow car'
+OBJ_NAMES[5] = 'blue and yellow whale'
+OBJ_NAMES[6] = 'blue-eyes-green-yellow'
+OBJ_NAMES[7] = 'orange fish'
+OBJ_NAMES[8] = 'brown and white squirrel'
+OBJ_NAMES[9] = 'mouse?'
+OBJ_NAMES[10] = 'dark green and white cube'
+OBJ_NAMES[11] = 'blue on red wagon'
+OBJ_NAMES[13] = 'white bottle'
+OBJ_NAMES[14] = 'ketchup bottle'
+OBJ_NAMES[16] = 'donkey'
+OBJ_NAMES[20] = 'pink moose'
+OBJ_NAMES[21] = 'orangina can'
+OBJ_NAMES[25] = 'multicolor ball'
+OBJ_NAMES[26] = 'giraffe'
+OBJ_NAMES[27] = 'green car'
+OBJ_NAMES[28] = 'red hammer'
+OBJ_NAMES[29] = 'blue rake'
+OBJ_NAMES[30] = 'green spade'
+OBJ_NAMES[32] = 'light green box'
 
 
 if os.path.exists(DB_FILE):
