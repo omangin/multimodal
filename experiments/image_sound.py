@@ -21,6 +21,5 @@ if len(sys.argv) > 1 and sys.argv[1] == '--debug':
 exp = TwoModalitiesExperiment({'objects': ObjectsLoader(['SURF', 'color']),
                                'sound': AcornsLoader(1)},
                               50, 50, 50, debug=DEBUG)
-exp.load_data()
 exp.run()
 exp.print_result_table()

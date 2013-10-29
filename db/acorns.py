@@ -57,6 +57,8 @@ def load(year, db_file=None, blacklist=False):
 
 class Year1Loader(Loader):
 
+    dataset_name = 'acorns'
+
     def __init__(self, speaker):
         super(Year1Loader, self).__init__()
         self.speaker = speaker
@@ -71,6 +73,13 @@ class Year1Loader(Loader):
         records = db.records[self.speaker]
         self.check_n_samples(len(records))
         return [db.tags[r.tags[0]] for r in records]
+
+    def serialize(self):
+        return self.speaker
+
+    @classmethod
+    def get_loader(cls, spkr):
+        return Year1Loader(spkr)
 
 
 # Deprecated for year 1

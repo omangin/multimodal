@@ -45,6 +45,8 @@ load.__doc__ = MotionDatabase.load_from_npz.__doc__
 
 class Choreo2Loader(Loader):
 
+    dataset_name = 'choreo2'
+
     def get_data(self):
         X = load_features()
         self.check_n_samples(X.shape[0])

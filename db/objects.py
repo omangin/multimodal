@@ -53,6 +53,8 @@ def load(db_file=None):
 
 class ObjectsLoader(Loader):
 
+    dataset_name = 'objects'
+
     def __init__(self, features, labels=DEFAULT_LABELS):
         super(ObjectsLoader, self).__init__()
         self.feature_list = features
@@ -82,6 +84,14 @@ class ObjectsLoader(Loader):
                   for i in self.keep_idx]
         self.check_n_samples(len(labels))
         return labels
+
+    def serialize(self):
+        return {'features': self.feature_list,
+                'labels': list(self.labels_to_keep)}
+
+    @classmethod
+    def get_loader(cls, cfg):
+        return ObjectsLoader(cfg['features'], labels=cfg['labels'])
 
 
 def load_features_and_labels(features, db_file=None):

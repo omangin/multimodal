@@ -8,3 +8,10 @@ class Loader(object):
             self.n_samples = n
         else:
             assert(self.n_samples == n)
+
+    def serialize(self):
+        return None
+
+    @classmethod
+    def get_loader(cls, nothing):
+        return cls()

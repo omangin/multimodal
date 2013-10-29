@@ -1,4 +1,5 @@
 from itertools import product
+import json
 
 import numpy as np
 
@@ -44,11 +45,20 @@ class TwoModalitiesExperiment(Experiment):
         self.iter_train = iter_train
         self.iter_test = iter_test
         self.debug = debug
+
+    def _parameters_to_dict(self):
+        d = {}
         for attr in ['modalities', 'k', 'coefs', 'iter_train', 'iter_test',
                      'debug']:
-            self.logger.store_global(attr, self.__getattribute__(attr))
+            d[attr] = self.__getattribute__(attr)
+        return d
 
-    def load_data(self):
+    def prepare(self):
+        # Log parameters
+        params = self._parameters_to_dict()
+        for key in params:
+            self.logger.store_global(key, params[key])
+        # Load data
         raw_data = [loader.get_data() for loader in self.loaders]
         # Compute coefficients
         self.coefs = [1. / np.average(x.sum(axis=1)) for x in raw_data]
@@ -90,6 +100,7 @@ class TwoModalitiesExperiment(Experiment):
         return len(self.labels)
 
     def run(self):
+        self.prepare()
         try:
             while True:
                 self._perform_one_run()
@@ -191,3 +202,36 @@ class TwoModalitiesExperiment(Experiment):
                 print table.format(*[s.center(width)
                                      for s in (mod_str + res_str)])
         print('-' * (width * 6 + 5))
+
+    def serialize_parameters(self, destination):
+        params = self._parameters_to_dict()
+        params['loaders'] = [(l.dataset_name, l.serialize())
+                             for l in self.loaders]
+        with open(destination, 'w+') as f:
+            json.dump(params, f)
+
+    @classmethod
+    def get_loader(cls, dataset, conf):
+        if dataset == 'acorns':
+            from db.acorns import Year1Loader
+            cls = Year1Loader
+        elif dataset == 'choreo2':
+            from db.choreo2 import Choreo2Loader
+            cls = Choreo2Loader
+        elif dataset == 'objects':
+            from db.objects import ObjectsLoader
+            cls = ObjectsLoader
+        else:
+            raise ValueError("Unknown dataset: %s!" % dataset)
+        return cls.get_loader(conf)
+
+    @classmethod
+    def load_from_serialized(cls, path_to_serialized):
+        with open(path_to_serialized, 'r+') as f:
+            d = json.load(f)
+        loaders = {}
+        for m, (dataset, conf) in zip(d['modalities'], d['loaders']):
+            loaders[m] = cls.get_loader(dataset, conf)
+        return TwoModalitiesExperiment(loaders, d['k'], d['iter_train'],
+                                       d['iter_test'], coefs=d['coefs'],
+                                       debug=d['debug'])
