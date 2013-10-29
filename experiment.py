@@ -1,5 +1,7 @@
 from itertools import product
 
+import numpy as np
+
 from .lib.logger import Logger
 from .lib.metrics import kl_div, rev_kl_div, cosine_diff, frobenius
 from .lib.utils import random_split
@@ -32,7 +34,8 @@ class TwoModalitiesExperiment(Experiment):
 
     n_modalities = 2
 
-    def __init__(self, loaders, k, coefs, iter_train, iter_test, debug=False):
+    def __init__(self, loaders, k, iter_train, iter_test, coefs=None,
+                 debug=False):
         super(TwoModalitiesExperiment, self).__init__()
         self.modalities = loaders.keys()
         self.loaders = [loaders[m] for m in self.modalities]
@@ -47,6 +50,8 @@ class TwoModalitiesExperiment(Experiment):
 
     def load_data(self):
         raw_data = [loader.get_data() for loader in self.loaders]
+        # Compute coefficients
+        self.coefs = [1. / np.average(x.sum(axis=1)) for x in raw_data]
         # Generate pairing
         raw_labels = [loader.get_labels() for loader in self.loaders]
         (label_assoc, labels, assoc_idx) = associate_labels(raw_labels)

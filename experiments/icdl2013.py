@@ -24,7 +24,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '--debug':
 
 exp = TwoModalitiesExperiment({'motion': Choreo2Loader(),
                                'sound': AcornsLoader(1)},
-                               50, [1., 0.0008], 50, 50, debug=DEBUG)
+                              50, 50, 50, debug=DEBUG)
 exp.load_data()
 exp.run()
 exp.print_result_table()
