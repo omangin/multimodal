@@ -1,6 +1,7 @@
 import os
-from itertools import product
 import json
+from datetime import datetime
+from itertools import product
 
 import numpy as np
 
@@ -106,11 +107,13 @@ class MultimodalExperiment(Experiment):
 
     def run(self):
         self.prepare()
+        self.logger.store_global('start_time', str(datetime.now()))
         try:
             while True:
                 self._perform_one_run()
         except StopIteration:
             pass
+        self.logger.store_global('end_time', str(datetime.now()))
         try:
             self.logger.save()
         except self.logger.NoFileError:
@@ -127,6 +130,7 @@ class MultimodalExperiment(Experiment):
                                     self.coefs, self.k)
         ## Train
         learner.train(data_train, self.iter_train)
+        self.logger.store('dictionary', learner.get_dico())
         ## Test
         self._evaluate(learner, data_test, test_labels)
 
