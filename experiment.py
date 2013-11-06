@@ -19,6 +19,11 @@ DEFAULT_PARAMS = {
     'k': 50,
     }
 
+TEST = 0
+EX = 1
+
+INTERNAL = -1
+
 
 class Experiment(object):
 
@@ -29,19 +34,11 @@ class Experiment(object):
         self.logger.filename = os.path.join(path, name)
 
 
-TEST = 0
-EX = 1
-
-INTERNAL = -1
-
-
-class TwoModalitiesExperiment(Experiment):
-
-    n_modalities = 2
+class MultimodalExperiment(Experiment):
 
     def __init__(self, loaders, k, iter_train, iter_test, coefs=None,
                  debug=False):
-        super(TwoModalitiesExperiment, self).__init__()
+        super(MultimodalExperiment, self).__init__()
         self.modalities = loaders.keys()
         self.loaders = [loaders[m] for m in self.modalities]
         self.k = k
@@ -49,6 +46,10 @@ class TwoModalitiesExperiment(Experiment):
         self.iter_train = iter_train
         self.iter_test = iter_test
         self.debug = debug
+
+    @property
+    def n_modalities(self):
+        return len(self.modalities)
 
     def _parameters_to_dict(self):
         d = {}
@@ -127,7 +128,52 @@ class TwoModalitiesExperiment(Experiment):
         ## Train
         learner.train(data_train, self.iter_train)
         ## Test
-        # Usage:
+        self._evaluate(learner, data_test, test_labels)
+
+    def _evaluate(self, learner, test, labels):
+        raise NotImplemented
+
+    def _get_all_internals(self, learner, data_set):
+        return [learner.reconstruct_internal(self.modalities[mod],
+                                             x, self.iter_test)
+                for mod, x in enumerate(data_set)]
+
+    def serialize_parameters(self, destination):
+        params = self._parameters_to_dict()
+        params['loaders'] = [(l.dataset_name, l.serialize())
+                             for l in self.loaders]
+        with open(destination, 'w+') as f:
+            json.dump(params, f)
+
+    @classmethod
+    def get_loader(cls, dataset, conf):
+        if dataset == 'acorns':
+            from db.acorns import Year1Loader
+            cls = Year1Loader
+        elif dataset == 'choreo2':
+            from db.choreo2 import Choreo2Loader
+            cls = Choreo2Loader
+        elif dataset == 'objects':
+            from db.objects import ObjectsLoader
+            cls = ObjectsLoader
+        else:
+            raise ValueError("Unknown dataset: %s!" % dataset)
+        return cls.get_loader(conf)
+
+    @classmethod
+    def load_from_serialized(cls, path_to_serialized):
+        with open(path_to_serialized, 'r+') as f:
+            d = json.load(f)
+        loaders = {}
+        for m, (dataset, conf) in zip(d['modalities'], d['loaders']):
+            loaders[m] = cls.get_loader(dataset, conf)
+        return cls(loaders, d['k'], d['iter_train'], d['iter_test'],
+                   coefs=d['coefs'], debug=d['debug'])
+
+
+class TwoModalitiesExperiment(MultimodalExperiment):
+
+    def _evaluate(self, learner, data_test, test_labels):
         # transformed_data_test/ex[original modality][destination modality]
         transformed_data_test = self._get_all_transformations(learner,
                                                               data_test)
@@ -170,11 +216,6 @@ class TwoModalitiesExperiment(Experiment):
             out[in_mod].append(internals[in_mod])
         return out
 
-    def _get_all_internals(self, learner, data_set):
-        return [learner.reconstruct_internal(self.modalities[mod],
-                                             x, self.iter_test)
-                for mod, x in enumerate(data_set)]
-
     def _get_score_key(self, mod1, mod2, mod_cmp, metric):
         return "score_{}2{}{}{}".format(
                 self.modalities[mod1], self.modalities[mod2],
@@ -211,34 +252,87 @@ class TwoModalitiesExperiment(Experiment):
                                      for s in (mod_str + res_str)])
         print('-' * (width * 6 + 5))
 
-    def serialize_parameters(self, destination):
-        params = self._parameters_to_dict()
-        params['loaders'] = [(l.dataset_name, l.serialize())
-                             for l in self.loaders]
-        with open(destination, 'w+') as f:
-            json.dump(params, f)
 
-    @classmethod
-    def get_loader(cls, dataset, conf):
-        if dataset == 'acorns':
-            from db.acorns import Year1Loader
-            cls = Year1Loader
-        elif dataset == 'choreo2':
-            from db.choreo2 import Choreo2Loader
-            cls = Choreo2Loader
-        elif dataset == 'objects':
-            from db.objects import ObjectsLoader
-            cls = ObjectsLoader
-        else:
-            raise ValueError("Unknown dataset: %s!" % dataset)
-        return cls.get_loader(conf)
+class ThreeModalitiesExperiment(MultimodalExperiment):
+    """Targetted for three modalities.
 
-    @classmethod
-    def load_from_serialized(cls, path_to_serialized):
-        with open(path_to_serialized, 'r+') as f:
-            d = json.load(f)
-        loaders = {}
-        for m, (dataset, conf) in zip(d['modalities'], d['loaders']):
-            loaders[m] = cls.get_loader(dataset, conf)
-        return cls(loaders, d['k'], d['iter_train'], d['iter_test'],
-                   coefs=d['coefs'], debug=d['debug'])
+    Same kind of experiment as TwoModalitiesExperiment but only compare
+    on internal modality.
+    Performs all comparison of the forms:
+    - mod1 vs mod2
+    - (mod1, mod2) vs mod3
+    """
+
+    def _evaluate(self, learner, data_test, test_labels):
+        # transformed_data_test/ex[original modality]
+        transformed_data_test = self._get_all_internals(learner, data_test)
+        transformed_data_ex = self._get_all_internals(learner, self.data_ex)
+        # For each combination of modalities:
+        for (mods1, mods2) in self._tested_combinations():
+            for metric, suffix in zip(
+                    [kl_div, rev_kl_div, frobenius, cosine_diff],
+                    ['', '_bis', '_frob', '_cosine']):
+                # Perform recognition
+                found = classify_NN(transformed_data_test[mods1],
+                                    transformed_data_ex[mods2],
+                                    self.labels_ex, metric)
+                # Conpute score
+                self.logger.store_result(
+                        self._get_score_key(mods1, mods2, suffix),
+                        found_labels_to_score(test_labels, found))
+
+    def _tested_combinations(self):
+        combinations = []
+        combinations += [([mod1], [mod2]) for mod1 in range(self.n_modalities)
+                    for mod2 in range(self.n_modalities) if mod1 != mod2]
+        two_to_one = [([m for m in range(self.n_modalities) if m != mod],
+                       [mod])
+                      for mod in range(self.n_modalities)]
+        combinations += two_to_one
+        combinations += [(y, x) for (x, y) in two_to_one]
+        return [(tuple(x), tuple(y)) for (x, y) in combinations]
+
+    def _get_all_internals(self, learner, data_set):
+        internals = {}
+        for mods, rest in self._tested_combinations():
+            if not mods in internals:
+                internals[mods] = learner.reconstruct_internal_multi(
+                        [self.modalities[m] for m in mods],
+                        [data_set[m] for m in mods],
+                        self.iter_test)
+        return internals
+
+    def _get_score_key(self, mods1, mods2, metric):
+        return "score_{}2{}{}".format(
+                '_'.join([self.modalities[m] for m in mods1]),
+                '_'.join([self.modalities[m] for m in mods2]),
+                metric)
+
+    def _get_result(self, mods1, mods2, metric_key):
+        key = self._get_score_key(mods1, mods2, metric_key)
+        return self.logger.get_stats(key)
+
+    def print_result_table(self):
+        # Print result table
+        width = 15
+        table = " ".join(["{}" for _dummy in range(5)])
+        print('-' * (width * 5 + 5))
+        print('Modalities'.center(width * 2 + 2)
+            + 'Score: avg (std)'.center(width * 3 + 2))
+        print('-' * (width * 2 + 1) + ' ' + '-' * (width * 3 + 2))
+        print table.format(*[s.center(width)
+                            for s in ['Test', 'Reference',
+                                      'KL', 'Euclidean', 'Cosine']])
+        print(' '.join(['-' * width] * 5))
+        for mods1, mods2 in self._tested_combinations():
+            mod_str = [' & '.join(self.modalities[m]
+                                  for m in mods1).center(width),
+                       ' & '.join(self.modalities[m]
+                                  for m in mods2).center(width),
+                       ]
+            res_str = [("%.3f (%.3f)"
+                        % self._get_result(mods1, mods2, metr))
+                        for metr in ['', '_frob', '_cosine']]
+            print table.format(*[s.center(width)
+                                    for s in (mod_str + res_str)])
+        print('-' * (width * 5 + 5))

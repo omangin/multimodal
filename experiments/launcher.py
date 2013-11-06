@@ -9,8 +9,10 @@ import subprocess
 from joblib import status
 from joblib.job import Job
 from joblib.process import MultiprocessPool
+from joblib.torque import TorquePool
 
-from multimodal.experiment import TwoModalitiesExperiment
+from multimodal.experiment import (TwoModalitiesExperiment,
+                                   ThreeModalitiesExperiment)
 from multimodal.db.choreo2 import Choreo2Loader
 from multimodal.db.acorns import Year1Loader as AcornsLoader
 from multimodal.db.objects import ObjectsLoader
@@ -30,9 +32,10 @@ def has_qsub():
                                stderr=devnull) == 0
 
 
-DEBUG = True
+DEBUG = False
 WORKDIR = os.path.expanduser('~/work/data/results/multimodal/')
-SCRIPT = os.path.join(os.path.dirname(__file__), 'two_modalities.py')
+SCRIPT2 = os.path.join(os.path.dirname(__file__), 'two_modalities.py')
+SCRIPT3 = os.path.join(os.path.dirname(__file__), 'three_modalities.py')
 
 args = parser.parse_args()
 LAUNCHER = args.launcher
@@ -43,26 +46,38 @@ ACTION = args.action
 Ks = [10, 20, 30, 40, 50, 75, 100, 200]
 
 
-exps = []
-exps += [("motion_sound_{}".format(k),
+exps_2 = []
+exps_2 += [("motion_sound_{}".format(k),
           TwoModalitiesExperiment({'motion': Choreo2Loader(),
                                    'sound': AcornsLoader(1)},
                                   k, 50, 50, debug=DEBUG)
           ) for k in Ks]
-exps += [("image_sound_{}".format(k),
+exps_2 += [("image_sound_{}".format(k),
           TwoModalitiesExperiment({'image': ObjectsLoader(['SURF', 'color']),
                                   'sound': AcornsLoader(1)},
                                  k, 50, 50, debug=DEBUG)
          ) for k in Ks]
-exps += [("image_motion_{}".format(k),
+exps_2 += [("image_motion_{}".format(k),
           TwoModalitiesExperiment({'image': ObjectsLoader(['SURF', 'color']),
                                    'motion': Choreo2Loader()},
                                   k, 50, 50, debug=DEBUG)
          ) for k in Ks]
+exps_3 = [("image_motion_sound_{}".format(k),
+         ThreeModalitiesExperiment({'image': ObjectsLoader(['SURF', 'color']),
+                                    'motion': Choreo2Loader(),
+                                    'sound': AcornsLoader(1)},
+                                   k, 50, 50, debug=DEBUG)
+        ) for k in Ks]
 
-jobs = [Job(WORKDIR, n, SCRIPT) for n, e in exps]
+exps = exps_2 + exps_3
 
-pool = MultiprocessPool()
+jobs = [Job(WORKDIR, n, SCRIPT2) for n, e in exps_2]
+jobs += [Job(WORKDIR, n, SCRIPT3) for n, e in exps_3]
+
+if LAUNCHER == 'process':
+    pool = MultiprocessPool()
+elif LAUNCHER == 'torque':
+    pool = TorquePool(default_walltime=4.)
 pool.extend(jobs)
 
 
