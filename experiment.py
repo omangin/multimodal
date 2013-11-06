@@ -1,3 +1,4 @@
+import os
 from itertools import product
 import json
 
@@ -23,6 +24,9 @@ class Experiment(object):
 
     def __init__(self):
         self.logger = Logger()
+
+    def set_out_path_and_name(self, path, name):
+        self.logger.filename = os.path.join(path, name)
 
 
 TEST = 0
@@ -106,6 +110,10 @@ class TwoModalitiesExperiment(Experiment):
                 self._perform_one_run()
         except StopIteration:
             pass
+        try:
+            self.logger.save()
+        except self.logger.NoFileError:
+            print 'Not saving logs: no destination was provided.'
 
     def _perform_one_run(self):
         train, test = self.run_generator.next()
@@ -232,6 +240,5 @@ class TwoModalitiesExperiment(Experiment):
         loaders = {}
         for m, (dataset, conf) in zip(d['modalities'], d['loaders']):
             loaders[m] = cls.get_loader(dataset, conf)
-        return TwoModalitiesExperiment(loaders, d['k'], d['iter_train'],
-                                       d['iter_test'], coefs=d['coefs'],
-                                       debug=d['debug'])
+        return cls(loaders, d['k'], d['iter_train'], d['iter_test'],
+                   coefs=d['coefs'], debug=d['debug'])
