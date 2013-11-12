@@ -100,6 +100,19 @@ class Logger(object):
             with open(self.filename + '.json', 'w') as f:
                 json.dump(to_save, f, indent=2)
 
+    def append_exps_from_other(self, other):
+        assert(self.exp_keys == other.exp_keys)
+        self.exps.extend(other.exps)
+
+    @classmethod
+    def merge_experiments(cls, loggers):
+        if len(loggers) == 0:
+            raise ValueError
+        l0 = loggers[0]
+        for l in loggers[1:]:
+            l0.append_exps_from_other(l)
+        return l0
+
     @classmethod
     def load(cls, filename, set_filename=False, load_np=True):
         logger = Logger()

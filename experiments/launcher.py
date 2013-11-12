@@ -102,6 +102,49 @@ elif LAUNCHER == 'torque':
 pool.extend(jobs)
 
 
+MOD_PAIRS = [('motion', 'sound'),
+             ('image', 'motion'),
+             ('image', 'sound')]
+EXPS_BY_NAME = dict(exps)
+JOBS_BY_NAME = dict({j.name: j for  j in jobs})
+
+
+from multimodal.lib.logger import Logger
+
+
+def collect_results():
+    loggers = {}
+    for mod1, mod2 in MOD_PAIRS:
+        loggers[(mod1, mod2)] = []
+        for k in Ks:
+            current_loggers = []
+            for i in range(N_RUN):
+                job = JOBS_BY_NAME["{}_{}_{}_{}".format(mod1, mod2, k, i)]
+                log = Logger.load(os.path.join(job.path, job.name),
+                                  load_np=False)
+                current_loggers.append(log)
+            loggers[(mod1, mod2)].append(
+                    Logger.merge_experiments(current_loggers))
+    return loggers
+
+
+def collect_results3():
+    loggers = {}
+    for mod1, mod2 in MOD_PAIRS:
+        loggers[(mod1, mod2)] = []
+    for k in Ks:
+        current_loggers = []
+        for i in range(N_RUN):
+            job = JOBS_BY_NAME["image_motion_sound_{}_{}".format(k, i)]
+            current_loggers.append(
+                    Logger.load(os.path.join(job.path, job.name),
+                                load_np=False))
+        merged_logger = Logger.merge_experiments(current_loggers)
+        for mod1, mod2 in MOD_PAIRS:
+            loggers[(mod1, mod2)].append(merged_logger)
+    return loggers
+
+
 def get_stats():
     return "{} ({})".format(pool.status,
                             ', '.join(["%s: %s" % x
@@ -132,3 +175,16 @@ elif ACTION == 'status':
         print_refreshed_stats()
     else:
         print_stats()
+elif ACTION == 'plot':
+    import matplotlib.pyplot as plt
+    plt.interactive(True)
+    from multimodal.plots import plot_k_graphs, plot_boxes
+    LOGGERS_2 = collect_results()
+    LOGGERS_3 = collect_results3()
+    plot_k_graphs(LOGGERS_2, Ks, title='KL')
+    plot_k_graphs(LOGGERS_2, Ks, title='Cosine', metric='_cosine')
+    plot_k_graphs(LOGGERS_3, Ks, title='KL 3')
+    plot_k_graphs(LOGGERS_3, Ks, title='Cosine 3', metric='_cosine')
+    idx50 = Ks.index(50)
+    plot_boxes({mods: LOGGERS_2[mods][idx50] for mods in LOGGERS_2},
+               LOGGERS_3[('image', 'motion')][idx50])
