@@ -7,7 +7,7 @@ import numpy as np
 
 from .lib.logger import Logger
 from .lib.metrics import kl_div, rev_kl_div, cosine_diff, frobenius
-from .lib.utils import random_split
+from .lib.utils import random_split, leave_one_out
 from .pairing import associate_labels
 from .learner import MultimodalLearner
 from .evaluation import classify_NN, found_labels_to_score, chose_examples
@@ -38,7 +38,7 @@ class Experiment(object):
 class MultimodalExperiment(Experiment):
 
     def __init__(self, loaders, k, iter_train, iter_test, coefs=None,
-                 debug=False):
+                 shuffle_labels=False, run_mode=.1, debug=False):
         super(MultimodalExperiment, self).__init__()
         self.modalities = loaders.keys()
         self.loaders = [loaders[m] for m in self.modalities]
@@ -46,6 +46,8 @@ class MultimodalExperiment(Experiment):
         self.coefs = coefs
         self.iter_train = iter_train
         self.iter_test = iter_test
+        self.shuffle_labels = shuffle_labels
+        self.run_mode = run_mode  # (ratio (float)|leave-one-out|single-run)
         self.debug = debug
 
     @property
@@ -55,7 +57,7 @@ class MultimodalExperiment(Experiment):
     def _parameters_to_dict(self):
         d = {}
         for attr in ['modalities', 'k', 'coefs', 'iter_train', 'iter_test',
-                     'debug']:
+                     'shuffle_labels', 'run_mode', 'debug']:
             d[attr] = self.__getattribute__(attr)
         return d
 
@@ -70,7 +72,8 @@ class MultimodalExperiment(Experiment):
         self.coefs = [1. / np.average(x.sum(axis=1)) for x in raw_data]
         # Generate pairing
         raw_labels = [loader.get_labels() for loader in self.loaders]
-        (label_assoc, labels, assoc_idx) = associate_labels(raw_labels)
+        (label_assoc, labels, assoc_idx) = associate_labels(
+                raw_labels, shuffle=self.shuffle_labels)
         self.label_association = label_assoc
         self.labels_all = labels
         self.data = [x[[idx[i] for idx in assoc_idx], :]
@@ -91,11 +94,20 @@ class MultimodalExperiment(Experiment):
         self.data = [x[self.others, :] for x in self.data]
         self.labels_ex = [self.labels_all[i] for i in self.examples]
         self.labels = [self.labels_all[i] for i in self.others]
-        self.run_generator = random_split(self.n_samples, .1)
+        self.run_generator = self.get_generator()
         # Safety...
         assert(set(self.labels_ex) == set(self.labels_all))
         assert(all([self.n_samples == x.shape[0] for x in self.data]))
         assert(all([l in range(10) for l in self.labels]))
+
+    def get_generator(self):
+        if self.run_mode == 'leave-one-out':
+            return leave_one_out(self.n_samples)
+        elif self.run_mode == 'single':
+            # Just take one split:
+            return iter([random_split(self.n_samples, .1).next()])
+        else:
+            return random_split(self.n_samples, self.run_mode)
 
     @property
     def n_features(self):
@@ -172,7 +184,8 @@ class MultimodalExperiment(Experiment):
         for m, (dataset, conf) in zip(d['modalities'], d['loaders']):
             loaders[m] = cls.get_loader(dataset, conf)
         return cls(loaders, d['k'], d['iter_train'], d['iter_test'],
-                   coefs=d['coefs'], debug=d['debug'])
+                   coefs=d['coefs'], shuffle_labels=d['shuffle_labels'],
+                   run_mode=d['run_mode'], debug=d['debug'])
 
 
 class TwoModalitiesExperiment(MultimodalExperiment):
