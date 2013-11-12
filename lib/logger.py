@@ -101,7 +101,7 @@ class Logger(object):
                 json.dump(to_save, f, indent=2)
 
     @classmethod
-    def load(cls, filename, set_filename=False):
+    def load(cls, filename, set_filename=False, load_np=True):
         logger = Logger()
         with open(filename + '.json', 'r') as f:
             data = json.loads(f.read())
@@ -109,7 +109,7 @@ class Logger(object):
         logger.exps = data['exps']
         logger.exp_keys = set(data['exp_keys'])
         logger.exp_results = set(data['result_keys'])
-        if data['has_np']:
+        if data['has_np'] and load_np:
             data_np = np.load(filename + '.npz')
             for full_key in data_np.keys():
                 p, k = full_key.split('_', 1)
