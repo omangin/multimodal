@@ -32,7 +32,6 @@ def has_qsub():
                                stderr=devnull) == 0
 
 
-DEBUG = False
 WORKDIR = os.path.expanduser('~/work/data/results/multimodal/')
 SCRIPT2 = os.path.join(os.path.dirname(__file__), 'two_modalities.py')
 SCRIPT3 = os.path.join(os.path.dirname(__file__), 'three_modalities.py')
@@ -43,36 +42,58 @@ if LAUNCHER is None:
     LAUNCHER = 'torque' if has_qsub() else 'process'
 ACTION = args.action
 
-Ks = [10, 20, 30, 40, 50, 75, 100, 200]
+Ks = [5, 10, 15, 20, 30, 40, 50, 75, 100, 200]
+N_RUN = 20
 
+DEFAULT_PARAMS = {
+    'debug': False,
+    'shuffle_labels': True,
+    'run_mode': 'single',
+    }
 
 exps_2 = []
-exps_2 += [("motion_sound_{}".format(k),
+exps_2 += [("motion_sound_{}_{}".format(k, i),
           TwoModalitiesExperiment({'motion': Choreo2Loader(),
                                    'sound': AcornsLoader(1)},
-                                  k, 50, 50, debug=DEBUG)
-          ) for k in Ks]
-exps_2 += [("image_sound_{}".format(k),
+                                  k, 50, 50, **DEFAULT_PARAMS)
+          ) for k in Ks for i in range(N_RUN)]
+exps_2 += [("image_sound_{}_{}".format(k, i),
           TwoModalitiesExperiment({'image': ObjectsLoader(['SURF', 'color']),
                                   'sound': AcornsLoader(1)},
-                                 k, 50, 50, debug=DEBUG)
-         ) for k in Ks]
-exps_2 += [("image_motion_{}".format(k),
+                                 k, 50, 50, **DEFAULT_PARAMS)
+         ) for k in Ks for i in range(N_RUN)]
+exps_2 += [("image_motion_{}_{}".format(k, i),
           TwoModalitiesExperiment({'image': ObjectsLoader(['SURF', 'color']),
                                    'motion': Choreo2Loader()},
-                                  k, 50, 50, debug=DEBUG)
-         ) for k in Ks]
-exps_3 = [("image_motion_sound_{}".format(k),
+                                  k, 50, 50, **DEFAULT_PARAMS)
+         ) for k in Ks for i in range(N_RUN)]
+exps_3 = [("image_motion_sound_{}_{}".format(k, i),
          ThreeModalitiesExperiment({'image': ObjectsLoader(['SURF', 'color']),
                                     'motion': Choreo2Loader(),
                                     'sound': AcornsLoader(1)},
-                                   k, 50, 50, debug=DEBUG)
-        ) for k in Ks]
+                                   k, 50, 50, **DEFAULT_PARAMS)
+        ) for k in Ks for i in range(N_RUN)]
 
-exps = exps_2 + exps_3
+image_features = ['SURF', 'color', 'SURF_pairs', 'color_pairs',
+                  'color_triplets']
+descriptor_sets = ([[f] for f in image_features]
+                   + [['SURF', 'color'],
+                      ['SURF_pairs', 'color_pairs'],
+                      ['SURF_pairs', 'color_triplets'],
+                      image_features]
+                   )
+exp_images = [("image_sound_feats_{}_{}".format('_'.join(descriptors), i),
+              TwoModalitiesExperiment(
+                  {'image': ObjectsLoader(descriptors),
+                   'sound': AcornsLoader(1)},
+                  50, 50, 50, **DEFAULT_PARAMS)
+         ) for descriptors in descriptor_sets for i in range(N_RUN)]
+
+exps = exps_2 + exps_3 + exp_images
 
 jobs = [Job(WORKDIR, n, SCRIPT2) for n, e in exps_2]
 jobs += [Job(WORKDIR, n, SCRIPT3) for n, e in exps_3]
+jobs += [Job(WORKDIR, n, SCRIPT2) for n, e in exp_images]
 
 if LAUNCHER == 'process':
     pool = MultiprocessPool()
