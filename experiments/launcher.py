@@ -5,6 +5,7 @@ import os
 import time
 import argparse
 import subprocess
+from collections import OrderedDict
 
 from joblib import status
 from joblib.job import Job
@@ -145,6 +146,20 @@ def collect_results3():
     return loggers
 
 
+def collect_results_image():
+    loggers = OrderedDict()
+    mod1, mod2 = 'image', 'sound'
+    for feats in descriptor_sets:
+        current_loggers = []
+        for i in range(N_RUN):
+            name = "image_sound_feats_{}_{}".format('_'.join(feats), i)
+            job = JOBS_BY_NAME[name]
+            log = Logger.load(os.path.join(job.path, job.name), load_np=False)
+            current_loggers.append(log)
+        loggers[tuple(feats)] = Logger.merge_experiments(current_loggers)
+    return loggers
+
+
 def get_stats():
     return "{} ({})".format(pool.status,
                             ', '.join(["%s: %s" % x
@@ -178,13 +193,18 @@ elif ACTION == 'status':
 elif ACTION == 'plot':
     import matplotlib.pyplot as plt
     plt.interactive(True)
-    from multimodal.plots import plot_k_graphs, plot_boxes
+    from multimodal.plots import (plot_2k_graphs, plot_boxes,
+                                  plot_boxes_by_feats)
     LOGGERS_2 = collect_results()
     LOGGERS_3 = collect_results3()
-    plot_k_graphs(LOGGERS_2, Ks, title='KL')
-    plot_k_graphs(LOGGERS_2, Ks, title='Cosine', metric='_cosine')
-    plot_k_graphs(LOGGERS_3, Ks, title='KL 3')
-    plot_k_graphs(LOGGERS_3, Ks, title='Cosine 3', metric='_cosine')
+    LOGGERS_IMAGE = collect_results_image()
+    #plot_k_graphs(LOGGERS_2, Ks, title='KL')
+    #plot_k_graphs(LOGGERS_2, Ks, title='Cosine', metric='_cosine')
+    #plot_k_graphs(LOGGERS_3, Ks, title='KL 3')
+    #plot_k_graphs(LOGGERS_3, Ks, title='Cosine 3', metric='_cosine')
+    plot_2k_graphs([LOGGERS_2, LOGGERS_3], Ks,
+                   title='Cosine', metric='_cosine')
     idx50 = Ks.index(50)
     plot_boxes({mods: LOGGERS_2[mods][idx50] for mods in LOGGERS_2},
                LOGGERS_3[('image', 'motion')][idx50])
+    plot_boxes_by_feats(LOGGERS_IMAGE)
