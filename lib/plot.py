@@ -35,17 +35,11 @@ def plot(*args, **kwargs):
 
 
 def legend(*args, **kwargs):
-    facecolor = kwargs.pop('facecolor', colorConverter.to_rgba('.9', alpha=.9))
+    facecolor = colorConverter.to_rgba('white', alpha=.9)
     ax = kwargs.pop('ax', plt.gca())
     legend = ax.legend(*args, frameon=True, scatterpoints=1, **kwargs)
     rect = legend.get_frame()
     rect.set_facecolor(facecolor)
-    rect.set_linewidth(0.0)
-    # change the label colors in the legend to almost black
-    # Change the legend label colors to almost black, too
-    texts = legend.texts
-    for t in texts:
-        t.set_color('0.1')
     return legend
 
 
@@ -62,7 +56,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     @param x: optional abscisse
     @param var_style: 'fill' (default) | 'bar'
     """
-    plt.grid(True)
+    ax = kwargs.pop('ax', plt.gca())
     mean = np.mean(y, axis=1)
     std = np.std(y, axis=1)
     if x is None:
@@ -80,6 +74,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     x = lines[0].get_xdata()
     if var and var_style in ('fill', 'both'):
         plt.fill_between(x, mean - std, mean + std, alpha=.3, color=color)
+    remove_chartjunk(ax, ['top', 'right'])
     return lines
 
 
