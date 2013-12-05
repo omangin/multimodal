@@ -1,5 +1,5 @@
 from unittest import TestCase, skip
-
+import random
 
 from multimodal.pairing import (associate, flatten, organize_by_values,
                                 associate_labels)
@@ -51,6 +51,15 @@ class TestModalityAssociation(TestCase):
                          [self.sets[0][x[0]] for x in assocs])
         self.assertEqual([names[1][l] for l in labels],
                          [self.sets[1][x[1]] for x in assocs])
+
+    def test_labels_shuffled(self):
+        random.seed(0)
+        names, labels, assocs = associate_labels(self.sets, shuffle=True)
+        self.assertEqual([names[0][l] for l in labels],
+                         [self.sets[0][x[0]] for x in assocs])
+        self.assertEqual([names[1][l] for l in labels],
+                         [self.sets[1][x[1]] for x in assocs])
+        self.assertEquals(names, ([1, 2, 3], ['6', '5', '4']))
 
     @skip("Too long to run each time but good to have!")
     def test_labels_match_on_db(self):

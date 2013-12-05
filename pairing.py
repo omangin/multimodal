@@ -31,7 +31,7 @@ def associate_labels(labels_by_modality, shuffle=False):
                 always shuffled).
     """
     # Replace label names by index in range
-    names, new_labels = zip(*[named_labels_to_range(l)
+    names, new_labels = zip(*[named_labels_to_range(l, shuffle=shuffle)
                               for l in labels_by_modality])
     # Ensure all modalities have same number of labels
     n_labels = len(names[0])
