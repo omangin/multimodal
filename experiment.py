@@ -8,7 +8,7 @@ import numpy as np
 from .lib.logger import Logger
 from .lib.metrics import kl_div, rev_kl_div, cosine_diff, frobenius
 from .lib.utils import random_split, leave_one_out
-from .pairing import associate_labels
+from .pairing import associate_samples
 from .learner import MultimodalLearner
 from .evaluation import classify_NN, found_labels_to_score, chose_examples
 
@@ -56,8 +56,7 @@ class MultimodalExperiment(Experiment):
 
     def _parameters_to_dict(self):
         d = {}
-        for attr in ['modalities', 'k', 'coefs', 'iter_train', 'iter_test',
-                     'shuffle_labels', 'run_mode', 'debug']:
+        for attr in self.params_to_store():
             d[attr] = self.__getattribute__(attr)
         return d
 
@@ -72,7 +71,7 @@ class MultimodalExperiment(Experiment):
         self.coefs = [1. / np.average(x.sum(axis=1)) for x in raw_data]
         # Generate pairing
         raw_labels = [loader.get_labels() for loader in self.loaders]
-        (label_assoc, labels, assoc_idx) = associate_labels(
+        (label_assoc, labels, assoc_idx) = associate_samples(
             raw_labels, shuffle=self.shuffle_labels)
         self.label_association = label_assoc
         self.labels_all = labels
@@ -164,6 +163,11 @@ class MultimodalExperiment(Experiment):
         params = self.serialize_parameters()
         with open(destination, 'w+') as f:
             json.dump(params, f)
+
+    @classmethod
+    def params_to_store(cls):
+        return ['modalities', 'k', 'coefs', 'iter_train', 'iter_test',
+                'shuffle_labels', 'run_mode', 'debug']
 
     @classmethod
     def get_loader(cls, dataset, conf):
