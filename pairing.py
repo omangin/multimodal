@@ -1,5 +1,7 @@
 import random
 
+from .lib.window import concat_of_frames
+
 
 def named_labels_to_range(sample_labels, shuffle=False):
     names = list(set(sample_labels))
@@ -9,7 +11,14 @@ def named_labels_to_range(sample_labels, shuffle=False):
     return names, [inversion[n] for n in sample_labels]
 
 
-def organize_by_values(l, nb_values):
+def associate_labels(labels_by_modality, shuffle=False):
+    return zip(*[named_labels_to_range(l, shuffle=shuffle)
+                 for l in labels_by_modality])
+
+
+def organize_by_values(l, nb_values=None):
+    if nb_values is None:
+        nb_values = len(set(l))
     buckets = [[] for i in range(nb_values)]
     for i, x in enumerate(l):
         buckets[x].append(i)
@@ -25,14 +34,13 @@ def flatten(l):
     return sum(l, [])
 
 
-def associate_labels(labels_by_modality, shuffle=False):
+def associate_samples(labels_by_modality, shuffle=False):
     """ labels_by_modality: for each modality, list of labels for each sample.
         suffle: shuffle label associations (the association between samples is
                 always shuffled).
     """
     # Replace label names by index in range
-    names, new_labels = zip(*[named_labels_to_range(l, shuffle=shuffle)
-                              for l in labels_by_modality])
+    names, new_labels = associate_labels(labels_by_modality, shuffle=shuffle)
     # Ensure all modalities have same number of labels
     n_labels = len(names[0])
     assert(all([len(l) == n_labels for l in names]))
@@ -46,3 +54,32 @@ def associate_labels(labels_by_modality, shuffle=False):
     associated = associate(by_labels)
     new_labels = [[i] * len(l) for i, l in enumerate(associated)]
     return names, flatten(new_labels), flatten(associated)
+
+
+def associate_to_window(labels_window, frame_labels, frame_rate):
+    """Create ArrayWindow containing frame indices so that at sample reference
+    times, the label of the frame matches the one from the labels_window.
+
+    Labels are supposed to be matched between the modalities.
+
+    Illustration (brackets indicates the labels):
+    |           Window [1]          |       Second Window [2]           |
+    | Frame [1] | Frame [1] | Frame [1] | Frame [2] | Frame [2] | Frame [2] !
+     <--- T ---> <--- T ---> ...
+                                     <-> => exceeded time for frames of win 1
+    T: frame period (1. / frame_rate)
+    """
+    # Ensure all modalities have same number of labels
+    grouped_frame_by_labels = organize_by_values(frame_labels)
+    framed_window = concat_of_frames(labels_window.absolute_start,
+                                     labels_window.absolute_end, frame_rate)
+    for f in framed_window.windows:
+        # Get label for current time
+        label = labels_window.get_subwindow_at(f.absolute_start).obj
+        try:
+            # Get an index for the current label
+            f.obj = grouped_frame_by_labels[label].pop()
+        except IndexError:
+            raise ValueError('Not enough frames to match labels '
+                             '(for label {}).'.format(label))
+    return framed_window

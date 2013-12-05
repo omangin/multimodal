@@ -13,7 +13,7 @@ def wavread(filepath):
     """
     with open(filepath, 'r') as f:
         sr, data = wavfile.read(f)
-    return sr, 1. * data
+    return sr, data
 
 
 def _to_approx_int(x, tol=TOL, above=False):
@@ -77,8 +77,10 @@ class BasicSlidingWindow(SlidingWindow):
     def get_subwindow(self, t_start, t_end):
         self.check_time(t_start)
         self.check_time(t_end)
-        self.absolute_start = t_start
-        self.absolute_end = t_end if t_start < t_end else t_end
+        new = self.copy()
+        new.absolute_start = t_start
+        new.absolute_end = t_end if t_start < t_end else t_start
+        return new
 
     def copy(self):
         return BasicSlidingWindow(self.absolute_start, self.absolute_end,
@@ -102,7 +104,7 @@ class SampledSlidingWindow(SlidingWindow):
     def n_samples(self):
         raise NotImplemented
 
-    def _samples_to_duration(self, n_samples):
+    def _samples_to_duration(self, n_samples=1):
         return n_samples * 1. / self.rate
 
     def _get_index_after(self, t):
@@ -115,7 +117,8 @@ class SampledSlidingWindow(SlidingWindow):
         return _to_approx_int(self.absolute_to_relative_time(t) * self.rate)
 
     def get_times(self):
-        rel_times = (.5 + np.arange(self.n_samples)) * 1. / self.rate
+        rel_times = (.5 + np.arange(self.n_samples)
+                     ) * self._samples_to_duration()
         return self.absolute_start + rel_times
 
 
@@ -254,6 +257,9 @@ class ConcatSlidingWindow(SlidingWindow):
     def copy(self):
         return ConcatSlidingWindow([win.copy() for win in self.windows])
 
+    def get_subwindow_at(self, t):
+        return self.windows[self._get_file_index_from_time(t)]
+
     def _ends(self):
         return [win.absolute_end for win in self.windows]
 
@@ -277,3 +283,13 @@ def concat_from_list_of_wavs(files, start=None):
             [WavFileSlidingWindow(f, 0.) for f in files],
             start=start)
     return ConcatSlidingWindow(file_windows)
+
+
+def concat_of_frames(t_start, t_end, rate):
+    n_frames = _to_approx_int((t_end - t_start) * rate, above=True)
+    duration = 1. / rate
+    return ConcatSlidingWindow(
+            ConcatSlidingWindow.align([BasicSlidingWindow(0., duration)
+                                       for _dummy in range(n_frames)],
+                                      start=t_start)
+            ).get_subwindow(t_start, t_end)

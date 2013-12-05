@@ -9,6 +9,7 @@ from scipy.io import wavfile
 from multimodal.lib.window import (
         _to_approx_int,
         TimeOutOfBound,
+        BasicSlidingWindow,
         ArraySlidingWindow,
         WavFileSlidingWindow,
         ConcatSlidingWindow,
@@ -48,10 +49,7 @@ class TestToApproxInt(TestCase):
         self.assertEqual(_to_approx_int(-3.94, tol=self.tol, above=True), -4)
 
 
-class TestArraySlidingWindow(TestCase):
-
-    def setUp(self):
-        self.win = ArraySlidingWindow(range(20, 10, -1), 2., 5.)
+class AbstractTestSlidingWindow(object):
 
     def test_start_end(self):
         self.assertAlmostEqual(self.win.absolute_start, 2.)
@@ -63,22 +61,44 @@ class TestArraySlidingWindow(TestCase):
         with self.assertRaises(TimeOutOfBound):
             self.win.get_subwindow(3.,  5.)
 
+    def test_get_subwindow_times(self):
+        subwin = self.win.get_subwindow(2.5, 3)
+        self.assertAlmostEquals(subwin.absolute_start, 2.5)
+        self.assertAlmostEquals(subwin.absolute_end, 3.)
+
     def test_get_subwindow_returns_empty(self):
         subwin = self.win.get_subwindow(3.5, 2.5)
         self.assertEquals(subwin.duration(), 0)
 
-    def test_get_subwindow_ok(self):
+
+class TestBasicSlidingWindow(AbstractTestSlidingWindow, TestCase):
+
+    def setUp(self):
+        self.win = BasicSlidingWindow(2., 4., obj='zou')
+
+
+class TestArraySlidingWindow(AbstractTestSlidingWindow, TestCase):
+
+    def setUp(self):
+        self.win = ArraySlidingWindow(range(20, 10, -1), 2., 5.)
+
+    def test_get_subwindow_times(self):
         subwin = self.win.get_subwindow(2.5, 3)
         self.assertAlmostEquals(subwin.absolute_start, 2.6)
         self.assertAlmostEquals(subwin.absolute_end, 3.)
-        self.assertEquals(subwin.array, range(17, 15, -1))
         subwin = self.win.get_subwindow(2.4, 3)
         self.assertAlmostEquals(subwin.absolute_start, 2.4)
         self.assertAlmostEquals(subwin.absolute_end, 3.)
-        self.assertEquals(subwin.array, range(18, 15, -1))
         subwin = self.win.get_subwindow(2.4, 3.2)
         self.assertAlmostEquals(subwin.absolute_start, 2.4)
         self.assertAlmostEquals(subwin.absolute_end, 3.2)
+
+    def test_get_subwindow_ok(self):
+        subwin = self.win.get_subwindow(2.5, 3)
+        self.assertEquals(subwin.array, range(17, 15, -1))
+        subwin = self.win.get_subwindow(2.4, 3)
+        self.assertEquals(subwin.array, range(18, 15, -1))
+        subwin = self.win.get_subwindow(2.4, 3.2)
         self.assertEquals(subwin.array, range(18, 14, -1))
 
     def test_concatenate(self):

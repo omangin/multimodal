@@ -1,8 +1,9 @@
 from unittest import TestCase, skip
 import random
 
+from multimodal.lib.window import BasicSlidingWindow, ConcatSlidingWindow
 from multimodal.pairing import (associate, flatten, organize_by_values,
-                                associate_labels)
+                                associate_samples, associate_to_window)
 
 
 class TestVar(TestCase):
@@ -33,20 +34,20 @@ class TestModalityAssociation(TestCase):
     def test_fails_on_different_nb_of_labels(self):
         self.sets[0].append(0)
         with self.assertRaises(AssertionError):
-            associate_labels(self.sets)
+            associate_samples(self.sets)
 
     def test_names(self):
-        names, _dum, _my = associate_labels(self.sets)
+        names, _dum, _my = associate_samples(self.sets)
         self.assertEqual(set(names[0]), set(range(1, 4)))
         self.assertEqual(set(names[1]), set(['4', '5', '6']))
 
     def test_labels_match_between(self):
-        names, _dummy, assocs = associate_labels(self.sets)
+        names, _dummy, assocs = associate_samples(self.sets)
         self.assertEqual([names[0].index(self.sets[0][x[0]]) for x in assocs],
                          [names[1].index(self.sets[1][x[1]]) for x in assocs])
 
     def test_labels_match_origin(self):
-        names, labels, assocs = associate_labels(self.sets)
+        names, labels, assocs = associate_samples(self.sets)
         self.assertEqual([names[0][l] for l in labels],
                          [self.sets[0][x[0]] for x in assocs])
         self.assertEqual([names[1][l] for l in labels],
@@ -54,7 +55,7 @@ class TestModalityAssociation(TestCase):
 
     def test_labels_shuffled(self):
         random.seed(0)
-        names, labels, assocs = associate_labels(self.sets, shuffle=True)
+        names, labels, assocs = associate_samples(self.sets, shuffle=True)
         self.assertEqual([names[0][l] for l in labels],
                          [self.sets[0][x[0]] for x in assocs])
         self.assertEqual([names[1][l] for l in labels],
@@ -71,7 +72,7 @@ class TestModalityAssociation(TestCase):
         motion_labels = motion_loader.get_labels()
         raw_labels = [loader.get_labels() for loader in [sound_loader,
                                                          motion_loader]]
-        names, labels, tuples = associate_labels(raw_labels)
+        names, labels, tuples = associate_samples(raw_labels)
         sound_names = names[0]
         sound_idx = [t[0] for t in tuples]
         motion_names = names[1]
@@ -82,3 +83,25 @@ class TestModalityAssociation(TestCase):
         # Check motion output labels
         self.assertEqual([motion_names[l] for l in labels],
                          [motion_labels[i] for i in motion_idx])
+
+
+def get_win(labels, times):
+    wins = [BasicSlidingWindow(0., t, obj=l) for l, t in zip(labels, times)]
+    return ConcatSlidingWindow(ConcatSlidingWindow.align(wins))
+
+
+class TestWindowedAssociation(TestCase):
+
+    def setUp(self):
+        self.sets = [[0, 1, 0], [0, 1, 1, 0, 0, 1]]
+
+    def test_fails_on_missing_frame(self):
+        with self.assertRaises(ValueError):
+            associate_to_window(get_win(self.sets[0], [7.2, 3.1, 1.05]),
+                                self.sets[1], 1.)
+
+    def test_associate_to_windows(self):
+        win = associate_to_window(get_win(self.sets[0], [1.8, 3.1, 1.05]),
+                                  self.sets[1], 1.)
+        self.assertEquals([self.sets[1][w.obj] for w in win.windows],
+                          [0, 0, 1, 1, 1, 0])
