@@ -62,6 +62,17 @@ class Year1Loader(Loader):
     def __init__(self, speaker):
         super(Year1Loader, self).__init__()
         self.speaker = speaker
+        self._db = None
+
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = load(1, blacklist=True)
+        return self._db
+
+    @property
+    def records(self):
+        return self.db.records[self.speaker]
 
     def get_data(self):
         X = load_features(1, self.speaker, blacklist=True)
@@ -69,10 +80,8 @@ class Year1Loader(Loader):
         return X
 
     def get_labels(self):
-        db = load(1, blacklist=True)
-        records = db.records[self.speaker]
-        self.check_n_samples(len(records))
-        return [db.tags[r.tags[0]] for r in records]
+        self.check_n_samples(len(self.records))
+        return [self.db.tags[r.tags[0]] for r in self.records]
 
     def serialize(self):
         return self.speaker
