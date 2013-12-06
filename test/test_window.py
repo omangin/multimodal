@@ -161,6 +161,16 @@ class TestWavFileSlidingWindow(WavTestCase):
         self.assertAlmostEqual(subsubwin.duration(), 222 * SAMPLE_DELTA)
         self.assertEqual(subsubwin.n_samples, 222)
 
+    def test_copy_sub_window(self):
+        win = WavFileSlidingWindow(self.files[0], 3.14)
+        new_start = 3.14 + 500 * SAMPLE_DELTA
+        new_stop = 3.14 + 1000.5 * SAMPLE_DELTA
+        subwin = win.get_subwindow(new_start, new_stop)
+        copy = subwin.copy()
+        self.assertAlmostEqual(copy.absolute_start, subwin.absolute_start)
+        self.assertAlmostEqual(copy.absolute_end, subwin.absolute_end)
+        self.assertEqual(copy.n_samples, subwin.n_samples)
+
     def test_to_array_window(self):
         win = WavFileSlidingWindow(self.files[0], 3.14)
         values = np.ones(WAV_RATE)

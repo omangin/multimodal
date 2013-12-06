@@ -195,7 +195,7 @@ class WavFileSlidingWindow(SampledSlidingWindow):
             n_samples, rate = n_samples_and_rate
         SampledSlidingWindow.__init__(self, absolute_start, n_samples, rate)
         self._start_after = 0  # start after n samples
-        self._stop_index = n_samples  # start after n samples
+        self._stop_index = n_samples  # stop after n samples
 
     @property
     def n_samples(self):
@@ -224,9 +224,13 @@ class WavFileSlidingWindow(SampledSlidingWindow):
         return subwin
 
     def copy(self):
-        return WavFileSlidingWindow(
+        new = WavFileSlidingWindow(
                 self.path_to_file, self.absolute_start,
-                n_samples_and_rate=(self._stop_index, self.rate))
+                n_samples_and_rate=(self._stop_index - self._start_after,
+                                    self.rate))
+        new._start_after = self._start_after
+        new._stop_index = self._stop_index
+        return new
 
     def to_array_window(self):
         sr, samples = wavread(self.path_to_file)
@@ -241,8 +245,10 @@ class ConcatSlidingWindow(SlidingWindow):
         if len(windows) < 1:
             raise ValueError('At least one window should be given.')
         self.windows = windows
-        if not (self._ends()[:-1] == [
-            w.absolute_start for w in self.windows[1:]]):
+        if max([abs(a - b)
+                for a, b in zip(self._ends()[:-1],
+                                [w.absolute_start for w in self.windows[1:]])
+                ] + [0]) > TOL:
             raise ValueError('Windows are not consecutive. '
                              'Consider using ConcatSlidingWindow.align.')
 
@@ -261,7 +267,7 @@ class ConcatSlidingWindow(SlidingWindow):
     def get_subwindow(self, t_start, t_end):
         i_start = self._get_file_index_from_time(t_start)
         i_end = self._get_file_index_from_time(t_end)
-        new_windows = self.windows[i_start:1 + i_end]
+        new_windows = [w.copy() for w in self.windows[i_start:1 + i_end]]
         new_windows[0] = new_windows[0].get_subwindow(
                 t_start, new_windows[0].absolute_end)
         new_windows[-1] = new_windows[-1].get_subwindow(
