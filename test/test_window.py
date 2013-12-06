@@ -12,6 +12,7 @@ from multimodal.lib.window import (
         BasicSlidingWindow,
         ArraySlidingWindow,
         WavFileSlidingWindow,
+        slider,
         ConcatSlidingWindow,
         concat_from_list_of_wavs,
         )
@@ -298,3 +299,42 @@ class TestConcatWavFileSlidingWindow(WavTestCase):
         sub_values = all_values[np.nonzero((time >= .1 * WAV_RATE)
                                             * (time + 1 <= 7.3 * WAV_RATE))]
         np.testing.assert_array_equal(win.to_array_window().array, sub_values)
+
+
+class Testslider(TestCase):
+
+    def test_simple_frames(self):
+        slider1 = slider(1., 5., 2., 2.)
+        slider2 = slider(1., 5., 2., 2., partial=True)
+        ok = [(1., 3.), (3., 5.)]
+        self.assertEquals(slider1, ok)
+        self.assertEquals(slider2, ok)
+
+    def test_frames(self):
+        slider1 = slider(0., 5., 2., 2.)
+        slider2 = slider(0., 5., 2., 2., partial=True)
+        ok = [(0., 2.), (2., 4.)]
+        self.assertEquals(slider1, ok)
+        self.assertEquals(slider2, ok + [(4., 5.)])
+
+    def test_simple_overlap(self):
+        slider1 = slider(1., 5., 2., 2. / 3.)
+        slider2 = slider(1., 5., 2., 2. / 3., partial=True)
+        ok = [(x / 3., y / 3.)
+              for x, y in [(3., 9.), (5., 11.), (7., 13.), (9., 15.)]]
+        np.testing.assert_allclose(slider1, ok)
+        np.testing.assert_allclose(slider2,
+                                   ok + [(11. / 3., 5.), (13. / 3., 5.)])
+
+    def test_overlap(self):
+        slider1 = slider(0., 2., 1., 2. / 3.)
+        slider2 = slider(0., 2., 1., 2. / 3., partial=True)
+        ok = [(x / 3., y / 3.) for x, y in [(0., 3.), (2., 5.)]]
+        np.testing.assert_allclose(slider1, ok)
+        np.testing.assert_allclose(slider2, ok + [(4. / 3., 2.)])
+
+    def test_overlap_several_partials(self):
+        slider1 = slider(0., 1., 2., .4)
+        slider2 = slider(0., 1., 2., .4, partial=True)
+        np.testing.assert_allclose(slider1, [])
+        np.testing.assert_allclose(slider2, [(0., 1.), (.4, 1.), (.8, 1.)])

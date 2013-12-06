@@ -29,6 +29,25 @@ def _to_approx_int(x, tol=TOL, above=False):
         return f
 
 
+def _snap_above(x, ref, tol=TOL):
+    return ref if ref - tol < x else x
+
+
+def _arange(left, right, step, include, tol=TOL):
+    """Consistent arange.
+       Right border is included iif approximately step | right - left.
+    """
+    n_steps = _to_approx_int((right - left) * 1. / step, tol=tol, above=False)
+    if n_steps < 0:
+        return []
+    else:
+        l = [left + i * step for i in range(n_steps)]
+        last = _snap_above(left + n_steps * step, right, tol=tol)
+        if include or last != right:
+            l.append(last)
+        return l
+
+
 class TimeOutOfBound(Exception):
     pass
 
@@ -285,6 +304,22 @@ def concat_from_list_of_wavs(files, start=None):
     return ConcatSlidingWindow(file_windows)
 
 
+def slider(t_start, t_end, width, shift, partial=False, tol=TOL):
+    """Iterator over start/end time of sliding windows covering
+    [t_start, t_end].
+
+    partial: bool (False)
+        If set returns partial window (i.e. of width < param),
+        else stop at last full window.
+    """
+    end_start = t_end if partial else t_end - width
+    # if partial: do not include t_end
+    # else: include t_end - width
+    starts = _arange(t_start, end_start, shift, not partial, tol=tol)
+    return [(t, _snap_above(t + width, t_end, tol=tol)) for t in starts]
+
+
+# TODO: mege with slider
 def concat_of_frames(t_start, t_end, rate):
     n_frames = _to_approx_int((t_end - t_start) * rate, above=True)
     duration = 1. / rate
