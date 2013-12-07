@@ -16,11 +16,12 @@ def associate_labels(labels_by_modality, shuffle=False):
                  for l in labels_by_modality])
 
 
-def organize_by_values(l, nb_values=None):
+def organize_by_values(l, nb_values=None, indices=None):
     if nb_values is None:
         nb_values = len(set(l))
     buckets = [[] for i in range(nb_values)]
-    for i, x in enumerate(l):
+    enum = enumerate(l) if indices is None else zip(indices, l)
+    for i, x in enum:
         buckets[x].append(i)
     return buckets
 
@@ -56,7 +57,7 @@ def associate_samples(labels_by_modality, shuffle=False):
     return names, flatten(new_labels), flatten(associated)
 
 
-def associate_to_window(labels_window, frame_labels, frame_rate):
+def associate_to_window(labels_window, frame_index, frame_labels, frame_rate):
     """Create ArrayWindow containing frame indices so that at sample reference
     times, the label of the frame matches the one from the labels_window.
 
@@ -70,7 +71,10 @@ def associate_to_window(labels_window, frame_labels, frame_rate):
     T: frame period (1. / frame_rate)
     """
     # Ensure all modalities have same number of labels
-    grouped_frame_by_labels = organize_by_values(frame_labels)
+    grouped_frame_by_labels = organize_by_values(frame_labels,
+                                                 indices=frame_index)
+    for l in grouped_frame_by_labels:
+        random.shuffle(l)
     framed_window = concat_of_frames(labels_window.absolute_start,
                                      labels_window.absolute_end, frame_rate)
     for f in framed_window.windows:

@@ -98,10 +98,16 @@ class TestWindowedAssociation(TestCase):
     def test_fails_on_missing_frame(self):
         with self.assertRaises(ValueError):
             associate_to_window(get_win(self.sets[0], [7.2, 3.1, 1.05]),
-                                self.sets[1], 1.)
+                                self.sets[1], range(6), 1.)
 
     def test_associate_to_windows(self):
         win = associate_to_window(get_win(self.sets[0], [1.8, 3.1, 1.05]),
-                                  self.sets[1], 1.)
+                                  range(6), self.sets[1], 1.)
+        self.assertEquals([self.sets[1][w.obj] for w in win.windows],
+                          [0, 0, 1, 1, 1, 0])
+
+    def test_associate_to_windows_reverse_indices(self):
+        win = associate_to_window(get_win(self.sets[0], [1.8, 3.1, 1.05]),
+                                  range(6)[::-1], self.sets[1][::-1], 1.)
         self.assertEquals([self.sets[1][w.obj] for w in win.windows],
                           [0, 0, 1, 1, 1, 0])

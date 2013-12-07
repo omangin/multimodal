@@ -102,8 +102,8 @@ class BasicSlidingWindow(SlidingWindow):
         return new
 
     def copy(self):
-        return BasicSlidingWindow(self.absolute_start, self.absolute_end,
-                            obj=self.obj)
+        return self.__class__(self.absolute_start, self.absolute_end,
+                              obj=self.obj)
 
 
 class SampledSlidingWindow(SlidingWindow):
@@ -129,7 +129,7 @@ class SampledSlidingWindow(SlidingWindow):
     def _get_index_after(self, t):
         self.check_time(t)
         return _to_approx_int(self.absolute_to_relative_time(t) * self.rate,
-                             above=True)
+                              above=True)
 
     def _get_index_before(self, t):
         self.check_time(t)
@@ -159,14 +159,16 @@ class ArraySlidingWindow(SampledSlidingWindow):
         i_end = self._get_index_before(t_end)
         new_start = self.relative_to_absolute_time(
                 self._samples_to_duration(i_start))
-        return ArraySlidingWindow(self.array[i_start:i_end], new_start,
-                                  self.rate)
+        return self.__class__(self.array[i_start:i_end], new_start, self.rate)
 
     def to_array_window(self):
         return self.copy()
 
     def copy(self):
-        return ArraySlidingWindow(self.array, self.absolute_start, self.rate)
+        return self.__class__(self.array, self.absolute_start, self.rate)
+
+    def write_as_wav(self, path):
+        wavfile.write(path, self.rate, self.array)
 
     @staticmethod
     def concatenate(wins):
@@ -224,7 +226,7 @@ class WavFileSlidingWindow(SampledSlidingWindow):
         return subwin
 
     def copy(self):
-        new = WavFileSlidingWindow(
+        new = self.__class__(
                 self.path_to_file, self.absolute_start,
                 n_samples_and_rate=(self._stop_index - self._start_after,
                                     self.rate))
