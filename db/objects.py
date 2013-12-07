@@ -59,18 +59,23 @@ class ObjectsLoader(Loader):
         super(ObjectsLoader, self).__init__()
         self.feature_list = features
         self._db = None
-        self.keep_idx = None
+        self._keep_idx = None
         self.labels_to_keep = set(labels)
 
     @property
     def db(self):  # Lazzy loading of db
         if self._db is None:
             self._db = load()
-            # Filter indices
-            self.keep_idx = [i for i, f in enumerate(self._db.frames)
-                             if self._db.object_names[f.label]
-                                in self.labels_to_keep]
         return self._db
+
+    @property
+    def keep_idx(self):
+        if self._keep_idx is None:
+            # Filter indices
+            self._keep_idx = [i for i, f in enumerate(self.db.frames)
+                              if self.db.object_names[f.label]
+                                in self.labels_to_keep]
+        return self._keep_idx
 
     def get_data(self):
         X = safe_hstack([self.db.get_histos_matrix_by_frame(f)
