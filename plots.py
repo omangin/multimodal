@@ -6,13 +6,25 @@ from matplotlib.lines import Line2D
 from .lib.plot import boxplot, plot_var, legend
 
 
-COLORS = {('image', 'motion'): '#006EB8',
-          ('motion', 'image'): 'orange',
-          ('image', 'sound'): '#3C8031',
-          ('sound', 'image'): 'violet',
-          ('motion', 'sound'): 'Red',
-          ('sound', 'motion'): '#FBB982',
+COLORS = {'motion': '#006EB8',
+          'image': 'orange',
+          'sound': '#3C8031',
           }
+
+PAIRS_COLORS = {('image', 'motion'): '#006EB8',
+                ('motion', 'image'): 'orange',
+                ('image', 'sound'): '#3C8031',
+                ('sound', 'image'): 'violet',
+                ('motion', 'sound'): 'Red',
+                ('sound', 'motion'): '#FBB982',
+                }
+
+
+def get_color_for_modalities(mods1, mods2, colors=None):
+    if colors == 'pairs':
+        return PAIRS_COLORS[mods1[0], mods2[0]]
+    else:
+        return COLORS[mods2[0]]
 
 
 def mod_to_mod_str(mod1, mod2):
@@ -20,23 +32,35 @@ def mod_to_mod_str(mod1, mod2):
 
 
 def all_pairs(iterable):
-    return [(i, j) for i in iterable for j in iterable if i != j]
+    return [([i], [j]) for i in iterable for j in iterable if i != j]
+
+
+def combinations(iterable):
+    pairs = all_pairs(iterable)
+    two_to_one = []
+    for i in iterable:
+        two_to_one.append(([j for j in iterable if j != i], [i]))
+    return pairs + two_to_one
 
 
 def plot_one_curve(loggers, mods, ks, metric='', linestyle='-',
                    var_style='fill'):
-    res = [loggers[i].get_values("score_{}2{}".format(*mods))
+    res = [loggers[i].get_values("score_{}2{}".format('_'.join(mods[0]),
+                                                      '_'.join(mods[1])))
            for i, k in enumerate(ks)]
     return plot_var(res, x=ks, label=mod_to_mod_str(*mods),
-                    color=COLORS[mods], linewidth=2, marker='o',
-                    var_style=var_style, linestyle=linestyle)
+                    color=get_color_for_modalities(*mods, colors='pairs'),
+                    linewidth=2, marker='o', var_style=var_style,
+                    linestyle=linestyle)
 
 
 def plot_k_graphs(loggers, ks, title='', metric=''):
     plt.figure()
     for mod1, mod2 in loggers:
-        plot_one_curve(loggers[(mod1, mod2)], (mod1, mod2), ks, metric=metric)
-        plot_one_curve(loggers[(mod1, mod2)], (mod2, mod1), ks, metric=metric)
+        plot_one_curve(loggers[(mod1, mod2)], ([mod1], [mod2]), ks,
+                       metric=metric)
+        plot_one_curve(loggers[(mod1, mod2)], ([mod2], [mod1]), ks,
+                       metric=metric)
     legend()
     plt.title(title)
     plt.show()
@@ -48,10 +72,10 @@ def plot_2k_graphs(loggers, ks, title='', metric=''):
     for (logs, linestyle) in zip(loggers, ['-', '--']):
         lines.append({})
         for mod1, mod2 in logs:
-            l1 = plot_one_curve(logs[(mod1, mod2)], (mod1, mod2), ks,
+            l1 = plot_one_curve(logs[(mod1, mod2)], ([mod1], [mod2]), ks,
                                 metric=metric, linestyle=linestyle,
                                 var_style='bar')
-            l2 = plot_one_curve(logs[(mod1, mod2)], (mod2, mod1), ks,
+            l2 = plot_one_curve(logs[(mod1, mod2)], ([mod2], [mod1]), ks,
                                 metric=metric, linestyle=linestyle,
                                 var_style='bar')
             lines[-1][mod_to_mod_str(mod1, mod2)] = l1
@@ -67,21 +91,28 @@ def plot_2k_graphs(loggers, ks, title='', metric=''):
     plt.show()
 
 
-def plot_boxes_one_exp(logger, mods):
+def plot_boxes_one_exp(logger, mods_to_mods, colors=None):
     ax = plt.gca()
     ax.yaxis.grid(True, color='lightgrey')
     plt.ylim(0, 1)
-    mod_pairs = all_pairs(mods)
-    vals = [logger.get_values("score_{}2{}_cosine".format(mod1, mod2))
-            for mod1, mod2 in mod_pairs]
+    vals = [logger.get_values("score_{}2{}_cosine".format('_'.join(mods1),
+                                                          '_'.join(mods2)))
+            for mods1, mods2 in mods_to_mods]
     boxes = boxplot(vals)['boxes']
-    for box, mods in zip(boxes, mod_pairs):
+    for box, mods in zip(boxes, mods_to_mods):
         coords = zip(box.get_xdata(), box.get_ydata())
-        p = plt.Polygon(coords, facecolor=COLORS[mods], alpha=.8)
+        p = plt.Polygon(coords,
+                facecolor=get_color_for_modalities(*mods, colors=colors),
+                alpha=.8)
         ax.add_patch(p)
-    labels = ['{} $\\rightarrow$ {}'.format(*mod_pair)
-              for mod_pair in mod_pairs]
-    plt.xticks(range(1, 1 + len(mod_pairs)), labels, rotation=25, ha='right')
+    labels = ['{} $\\rightarrow$ {}'.format(', '.join(mod1), ', '.join(mod2))
+              for mod1, mod2 in mods_to_mods]
+    plt.xticks(range(1, 1 + len(mods_to_mods)),
+               labels, rotation=25, ha='right')
+
+
+def plot_boxes_one_exp_pairs(logger, mods, colors=None):
+    plot_boxes_one_exp(logger, all_pairs(mods), colors=colors)
 
 
 def plot_boxes(loggers2, logger3):
@@ -95,12 +126,21 @@ def plot_boxes(loggers2, logger3):
             ax.label_outer()
             ax.spines['left'].set_visible(False)
         log = loggers2[mods]
-        plot_boxes_one_exp(log, mods)
+        plot_boxes_one_exp_pairs(log, mods, colors='pairs')
         plt.title(', '.join(mods))
     ax = plt.subplot(1, 2, 2, sharey=ax1)
     ax.label_outer()
     ax.spines['left'].set_visible(False)
-    plot_boxes_one_exp(logger3, logger3.get_value('modalities'))
+    plot_boxes_one_exp_pairs(logger3, logger3.get_value('modalities'),
+                             colors='pairs')
+    plt.title(', '.join(mods))
+    plt.show()
+
+
+def plot_boxes_all_mods(logger3):
+    plt.figure()
+    mods = logger3.get_value('modalities')
+    plot_boxes_one_exp(logger3, combinations(mods))
     plt.title(', '.join(mods))
     plt.show()
 
@@ -117,6 +157,6 @@ def plot_boxes_by_feats(loggers):
             ax.label_outer()
             ax.spines['left'].set_visible(False)
         log = loggers[feats]
-        plot_boxes_one_exp(log, mods)
+        plot_boxes_one_exp_pairs(log, mods, colors='pairs')
         plt.title('\n'.join(wrap(', '.join(feats).replace('_', '-'), 15)))
     plt.show()

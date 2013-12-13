@@ -194,7 +194,7 @@ elif ACTION == 'plot':
     import matplotlib.pyplot as plt
     plt.interactive(True)
     from multimodal.plots import (plot_2k_graphs, plot_boxes,
-                                  plot_boxes_by_feats)
+                                  plot_boxes_by_feats, plot_boxes_all_mods)
     LOGGERS_2 = collect_results()
     LOGGERS_3 = collect_results3()
     LOGGERS_IMAGE = collect_results_image()
@@ -208,3 +208,4 @@ elif ACTION == 'plot':
     plot_boxes({mods: LOGGERS_2[mods][idx50] for mods in LOGGERS_2},
                LOGGERS_3[('image', 'motion')][idx50])
     plot_boxes_by_feats(LOGGERS_IMAGE)
+    plot_boxes_all_mods(LOGGERS_3[('image', 'motion')][idx50])
