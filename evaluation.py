@@ -97,15 +97,19 @@ def todense(X):
         return X
 
 
+def all_distances(reco_data, ex_data, measure):
+    reco_data = todense(reco_data)[:, np.newaxis, :]
+    ex_data = todense(ex_data)[np.newaxis, :, :]
+    return measure(reco_data, ex_data, axis=-1)
+
+
 def classify_NN(reco_data, ex_data, ex_labels, measure):
     """For each sample in reco_data, compares it with all examples of
     ex_data.
 
     test_data should not contain examples that appear in reco_data
     """
-    reco_data = todense(reco_data)[:, np.newaxis, :]
-    ex_data = todense(ex_data)[np.newaxis, :, :]
-    dists = measure(reco_data, ex_data, axis=-1)
+    dists = all_distances(reco_data, ex_data, measure)
     return dists_to_found_labels(dists, ex_labels)
 
 
