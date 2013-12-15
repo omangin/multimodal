@@ -274,7 +274,7 @@ class ConcatSlidingWindow(SlidingWindow):
                 t_start, new_windows[0].absolute_end)
         new_windows[-1] = new_windows[-1].get_subwindow(
                 new_windows[-1].absolute_start, t_end)
-        return ConcatSlidingWindow(new_windows)
+        return self.__class__(new_windows)
 
     def to_array_window(self):
         """Only when windows have a to_array_method."""
@@ -282,7 +282,7 @@ class ConcatSlidingWindow(SlidingWindow):
         return ArraySlidingWindow.concatenate(array_windows)
 
     def copy(self):
-        return ConcatSlidingWindow([win.copy() for win in self.windows])
+        return self.__class__([win.copy() for win in self.windows])
 
     def get_subwindow_at(self, t):
         return self.windows[self._get_file_index_from_time(t)]
