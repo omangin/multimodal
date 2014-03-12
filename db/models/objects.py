@@ -63,7 +63,7 @@ class Frame(object):
         blocks = line.split('|')
         filename = blocks[0][:-1]
         views = [_string_to_object_view(s) for s in blocks[1:]]
-        label, timestamp = Frame._parse_filename_name(filename)
+        label, timestamp = Frame._parse_filename(filename)
         return Frame(filename, label, timestamp, views)
 
     @classmethod
@@ -72,7 +72,7 @@ class Frame(object):
                      d['timestamp'], d['views'])
 
     @classmethod
-    def _parse_filename_name(cls, name):
+    def _parse_filename(cls, name):
         m = re.search(r"_o(?P<label>[0-9]+)_(?P<time>[0-9]+.[0-9]+)$", name)
         if m:
             return (int(m.group('label')), float(m.group('time')))
