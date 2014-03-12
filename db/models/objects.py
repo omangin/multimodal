@@ -56,8 +56,7 @@ class Frame(object):
         return {'views': self.views,
                 'label': self.label,
                 'timestamp': self.timestamp,
-                'filename': self.filename,
-                'object-views': self.views}
+                'filename': self.filename}
 
     @classmethod
     def from_line(cls, line):
@@ -70,7 +69,7 @@ class Frame(object):
     @classmethod
     def from_dict(cls, d):
         return Frame(d['filename'], d['label'],
-                     d['timestamp'], d['object-views'])
+                     d['timestamp'], d['views'])
 
     @classmethod
     def _parse_filename_name(cls, name):
