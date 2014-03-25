@@ -121,6 +121,7 @@ def plot_boxes(loggers2, logger3):
     for i, mods in enumerate(loggers2):
         if i == 0:
             ax1 = plt.subplot(1, 2 * nb_pairs, 1 + i)
+            ax1.set_ylabel('Cross-modal association score')
         else:
             ax = plt.subplot(1, 2 * nb_pairs, 1 + i, sharey=ax1)
             ax.label_outer()
