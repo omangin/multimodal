@@ -332,12 +332,11 @@ def slider(t_start, t_end, width, shift, partial=False, tol=TOL):
     return [(t, _snap_above(t + width, t_end, tol=tol)) for t in starts]
 
 
-# TODO: merge with slider
 def concat_of_frames(t_start, t_end, rate):
-    n_frames = _to_approx_int((t_end - t_start) * rate, above=True)
+    """Produces a list of frames that cover the given time interval.
+    The frame are generated at a given rate.
+    Thus they all have the same duration, except for the last one.
+    """
     duration = 1. / rate
-    return ConcatTimeWindow(
-        ConcatTimeWindow.align([BasicTimeWindow(0., duration)
-                                for _dummy in range(n_frames)],
-                               start=t_start)
-        ).get_subwindow(t_start, t_end)
+    times = slider(t_start, t_end, duration, duration, partial=True)
+    return ConcatTimeWindow([BasicTimeWindow(ts, te) for (ts, te) in times])

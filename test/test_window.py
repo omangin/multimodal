@@ -7,15 +7,16 @@ import numpy as np
 from scipy.io import wavfile
 
 from multimodal.lib.window import (
-        _to_approx_int,
-        TimeOutOfBound,
-        BasicTimeWindow,
-        ArrayTimeWindow,
-        WavFileTimeWindow,
-        slider,
-        ConcatTimeWindow,
-        concat_from_list_of_wavs,
-        )
+    _to_approx_int,
+    TimeOutOfBound,
+    BasicTimeWindow,
+    ArrayTimeWindow,
+    WavFileTimeWindow,
+    slider,
+    ConcatTimeWindow,
+    concat_from_list_of_wavs,
+    concat_of_frames,
+    )
 
 
 WAV_RATE = 44100
@@ -154,7 +155,7 @@ class TestWavFileTimeWindow(WavTestCase):
         new_new_start = new_start + 111 * SAMPLE_DELTA
         new_new_stop = new_new_start + 222 * SAMPLE_DELTA
         subsubwin = subwin.get_subwindow(new_new_start - .5 * SAMPLE_DELTA,
-                                      new_new_stop)
+                                         new_new_stop)
         self.assertAlmostEqual(subsubwin.absolute_start, new_new_start)
         self.assertAlmostEqual(subsubwin.absolute_end,
                                3.14 + (500 + 333) * SAMPLE_DELTA)
@@ -307,7 +308,7 @@ class TestConcatWavFileTimeWindow(WavTestCase):
             4 * np.ones(4 * WAV_RATE)])
         time = np.array(range(10 * WAV_RATE))
         sub_values = all_values[np.nonzero((time >= .1 * WAV_RATE)
-                                            * (time + 1 <= 7.3 * WAV_RATE))]
+                                           * (time + 1 <= 7.3 * WAV_RATE))]
         np.testing.assert_array_equal(win.to_array_window().array, sub_values)
 
 
@@ -348,3 +349,41 @@ class Testslider(TestCase):
         slider2 = slider(0., 1., 2., .4, partial=True)
         np.testing.assert_allclose(slider1, [])
         np.testing.assert_allclose(slider2, [(0., 1.), (.4, 1.), (.8, 1.)])
+
+
+class TestConcatOfFrames(TestCase):
+
+    t_start = 1.3
+    t_end = 13.
+    rate = 3
+
+    def old_concat_of_frames(self):
+        """Old implementation to test against."""
+        n_frames = _to_approx_int((self.t_end - self.t_start) * self.rate,
+                                  above=True)
+        duration = 1. / self.rate
+        return ConcatTimeWindow(
+            ConcatTimeWindow.align([BasicTimeWindow(0., duration)
+                                    for _dummy in range(n_frames)],
+                                   start=self.t_start)
+            ).get_subwindow(self.t_start, self.t_end)
+
+    def test_is_ConcatTimeWindow(self):
+        win = concat_of_frames(self.t_start, self.t_end, self.rate)
+        self.assertIsInstance(win, ConcatTimeWindow)
+
+    def test_duration(self):
+        win = concat_of_frames(self.t_start, self.t_end, self.rate)
+        duration = 1. / self.rate
+        for w in win.windows[:-1]:
+            self.assertAlmostEqual(w.duration(), duration)
+
+    def test_against_old_concat_of_frames(self):
+        win = concat_of_frames(self.t_start, self.t_end, self.rate)
+        old_win = self.old_concat_of_frames()
+        self.assertEquals(win.absolute_start, old_win.absolute_start)
+        self.assertEquals(win.absolute_end, old_win.absolute_end)
+        np.testing.assert_allclose([w.absolute_start for w in win.windows],
+                                   [w.absolute_start for w in old_win.windows])
+        np.testing.assert_allclose([w.absolute_end for w in win.windows],
+                                   [w.absolute_end for w in old_win.windows])
