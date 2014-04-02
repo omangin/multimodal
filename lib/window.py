@@ -52,7 +52,10 @@ class TimeOutOfBound(Exception):
     pass
 
 
-class SlidingWindow(object):
+class TimeWindow(object):
+
+    """Time window.
+    """
 
     def duration(self):
         return self.absolute_end - self.absolute_start
@@ -84,7 +87,7 @@ class SlidingWindow(object):
         raise NotImplemented
 
 
-class BasicSlidingWindow(SlidingWindow):
+class BasicTimeWindow(TimeWindow):
     """Associates a time window to a basic object.
     """
 
@@ -106,8 +109,8 @@ class BasicSlidingWindow(SlidingWindow):
                               obj=self.obj)
 
 
-class SampledSlidingWindow(SlidingWindow):
-    """Sliding window for discrete data (sequence of samples) at a fixed
+class SampledTimeWindow(TimeWindow):
+    """Time window for discrete data (sequence of samples) at a fixed
     sample rate.
 
     The convention is that first sample is located at: start + .5 / rate.
@@ -117,7 +120,7 @@ class SampledSlidingWindow(SlidingWindow):
         self.absolute_start = absolute_start
         self.rate = rate
         self.absolute_end = self.relative_to_absolute_time(
-                self._samples_to_duration(n_samples))
+            self._samples_to_duration(n_samples))
 
     @property
     def n_samples(self):
@@ -141,13 +144,13 @@ class SampledSlidingWindow(SlidingWindow):
         return self.absolute_start + rel_times
 
 
-class ArraySlidingWindow(SampledSlidingWindow):
-    """Sliding window for array data. Each element from the array has a given
+class ArrayTimeWindow(SampledTimeWindow):
+    """Time window for array data. Each element from the array has a given
        length equal to 1 / self.rate.
     """
 
     def __init__(self, array, absolute_start, rate):
-        SampledSlidingWindow.__init__(self, absolute_start, len(array), rate)
+        SampledTimeWindow.__init__(self, absolute_start, len(array), rate)
         self.array = array
 
     @property
@@ -158,7 +161,7 @@ class ArraySlidingWindow(SampledSlidingWindow):
         i_start = self._get_index_after(t_start)
         i_end = self._get_index_before(t_end)
         new_start = self.relative_to_absolute_time(
-                self._samples_to_duration(i_start))
+            self._samples_to_duration(i_start))
         return self.__class__(self.array[i_start:i_end], new_start, self.rate)
 
     def to_array_window(self):
@@ -177,13 +180,13 @@ class ArraySlidingWindow(SampledSlidingWindow):
         if not all([w.rate == wins[0].rate for w in wins]):
             raise ValueError('All windows must have the same rate.')
         arr = np.hstack([w.array for w in wins])
-        return ArraySlidingWindow(arr, wins[0].absolute_start, wins[0].rate)
+        return ArrayTimeWindow(arr, wins[0].absolute_start, wins[0].rate)
 
 
-class WavFileSlidingWindow(SampledSlidingWindow):
-    """Implements sliding window which data is stored in wav file.
+class WavFileTimeWindow(SampledTimeWindow):
+    """Implements time window which data is stored in wav file.
 
-    The sliding window may start after the beginning of the file and stop
+    The time window may start after the beginning of the file and stop
     before its end. The file data is not kept loaded when not necessary.
     """
 
@@ -195,7 +198,7 @@ class WavFileSlidingWindow(SampledSlidingWindow):
             n_samples = len(samples)
         else:
             n_samples, rate = n_samples_and_rate
-        SampledSlidingWindow.__init__(self, absolute_start, n_samples, rate)
+        SampledTimeWindow.__init__(self, absolute_start, n_samples, rate)
         self._start_after = 0  # start after n samples
         self._stop_index = n_samples  # stop after n samples
 
@@ -214,7 +217,7 @@ class WavFileSlidingWindow(SampledSlidingWindow):
         stop_after = self._get_index_before(new_t_end)
         self._stop_index = self._start_after + stop_after
         self.absolute_end = self.relative_to_absolute_time(
-                self._samples_to_duration(stop_after))
+            self._samples_to_duration(stop_after))
 
     def _crop(self, t_start, t_end):
         self._delay_start(t_start)
@@ -227,21 +230,21 @@ class WavFileSlidingWindow(SampledSlidingWindow):
 
     def copy(self):
         new = self.__class__(
-                self.path_to_file, self.absolute_start,
-                n_samples_and_rate=(self._stop_index - self._start_after,
-                                    self.rate))
+            self.path_to_file, self.absolute_start,
+            n_samples_and_rate=(self._stop_index - self._start_after,
+                                self.rate))
         new._start_after = self._start_after
         new._stop_index = self._stop_index
         return new
 
     def to_array_window(self):
         sr, samples = wavread(self.path_to_file)
-        return ArraySlidingWindow(samples[self._start_after:self._stop_index],
-                                  self.absolute_start, sr)
+        return ArrayTimeWindow(samples[self._start_after:self._stop_index],
+                               self.absolute_start, sr)
 
 
-class ConcatSlidingWindow(SlidingWindow):
-    """Sequence of consecutive sliding windows."""
+class ConcatTimeWindow(TimeWindow):
+    """Sequence of consecutive time windows."""
 
     def __init__(self, windows):
         if len(windows) < 1:
@@ -252,7 +255,7 @@ class ConcatSlidingWindow(SlidingWindow):
                                 [w.absolute_start for w in self.windows[1:]])
                 ] + [0]) > TOL:
             raise ValueError('Windows are not consecutive. '
-                             'Consider using ConcatSlidingWindow.align.')
+                             'Consider using ConcatTimeWindow.align.')
 
     @property
     def absolute_start(self):
@@ -271,15 +274,15 @@ class ConcatSlidingWindow(SlidingWindow):
         i_end = self._get_file_index_from_time(t_end)
         new_windows = [w.copy() for w in self.windows[i_start:1 + i_end]]
         new_windows[0] = new_windows[0].get_subwindow(
-                t_start, new_windows[0].absolute_end)
+            t_start, new_windows[0].absolute_end)
         new_windows[-1] = new_windows[-1].get_subwindow(
-                new_windows[-1].absolute_start, t_end)
+            new_windows[-1].absolute_start, t_end)
         return self.__class__(new_windows)
 
     def to_array_window(self):
         """Only when windows have a to_array_method."""
         array_windows = [win.to_array_window() for win in self.windows]
-        return ArraySlidingWindow.concatenate(array_windows)
+        return ArrayTimeWindow.concatenate(array_windows)
 
     def copy(self):
         return self.__class__([win.copy() for win in self.windows])
@@ -296,6 +299,9 @@ class ConcatSlidingWindow(SlidingWindow):
 
     @classmethod
     def align(cls, windows, start=None):
+        """Align start windows so that they cover consecutive time intervals.
+        Changes start times but not durations and window order.
+        """
         if start is None:
             start = windows[0].absolute_start
         t = start
@@ -306,14 +312,13 @@ class ConcatSlidingWindow(SlidingWindow):
 
 
 def concat_from_list_of_wavs(files, start=None):
-    file_windows = ConcatSlidingWindow.align(
-            [WavFileSlidingWindow(f, 0.) for f in files],
-            start=start)
-    return ConcatSlidingWindow(file_windows)
+    file_windows = ConcatTimeWindow.align(
+        [WavFileTimeWindow(f, 0.) for f in files], start=start)
+    return ConcatTimeWindow(file_windows)
 
 
 def slider(t_start, t_end, width, shift, partial=False, tol=TOL):
-    """Iterator over start/end time of sliding windows covering
+    """Iterator over start/end time of time windows covering
     [t_start, t_end].
 
     partial: bool (False)
@@ -327,12 +332,12 @@ def slider(t_start, t_end, width, shift, partial=False, tol=TOL):
     return [(t, _snap_above(t + width, t_end, tol=tol)) for t in starts]
 
 
-# TODO: mege with slider
+# TODO: merge with slider
 def concat_of_frames(t_start, t_end, rate):
     n_frames = _to_approx_int((t_end - t_start) * rate, above=True)
     duration = 1. / rate
-    return ConcatSlidingWindow(
-            ConcatSlidingWindow.align([BasicSlidingWindow(0., duration)
-                                       for _dummy in range(n_frames)],
-                                      start=t_start)
-            ).get_subwindow(t_start, t_end)
+    return ConcatTimeWindow(
+        ConcatTimeWindow.align([BasicTimeWindow(0., duration)
+                                for _dummy in range(n_frames)],
+                               start=t_start)
+        ).get_subwindow(t_start, t_end)

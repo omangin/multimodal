@@ -9,11 +9,11 @@ from scipy.io import wavfile
 from multimodal.lib.window import (
         _to_approx_int,
         TimeOutOfBound,
-        BasicSlidingWindow,
-        ArraySlidingWindow,
-        WavFileSlidingWindow,
+        BasicTimeWindow,
+        ArrayTimeWindow,
+        WavFileTimeWindow,
         slider,
-        ConcatSlidingWindow,
+        ConcatTimeWindow,
         concat_from_list_of_wavs,
         )
 
@@ -50,7 +50,7 @@ class TestToApproxInt(TestCase):
         self.assertEqual(_to_approx_int(-3.94, tol=self.tol, above=True), -4)
 
 
-class AbstractTestSlidingWindow(object):
+class AbstractTestTimeWindow(object):
 
     def test_start_end(self):
         self.assertAlmostEqual(self.win.absolute_start, 2.)
@@ -72,16 +72,16 @@ class AbstractTestSlidingWindow(object):
         self.assertEquals(subwin.duration(), 0)
 
 
-class TestBasicSlidingWindow(AbstractTestSlidingWindow, TestCase):
+class TestBasicTimeWindow(AbstractTestTimeWindow, TestCase):
 
     def setUp(self):
-        self.win = BasicSlidingWindow(2., 4., obj='zou')
+        self.win = BasicTimeWindow(2., 4., obj='zou')
 
 
-class TestArraySlidingWindow(AbstractTestSlidingWindow, TestCase):
+class TestArrayTimeWindow(AbstractTestTimeWindow, TestCase):
 
     def setUp(self):
-        self.win = ArraySlidingWindow(range(20, 10, -1), 2., 5.)
+        self.win = ArrayTimeWindow(range(20, 10, -1), 2., 5.)
 
     def test_get_subwindow_times(self):
         subwin = self.win.get_subwindow(2.5, 3)
@@ -103,8 +103,8 @@ class TestArraySlidingWindow(AbstractTestSlidingWindow, TestCase):
         self.assertEquals(subwin.array, range(18, 14, -1))
 
     def test_concatenate(self):
-        win2 = ArraySlidingWindow(range(5), 4., 5.)
-        win = ArraySlidingWindow.concatenate([self.win, win2])
+        win2 = ArrayTimeWindow(range(5), 4., 5.)
+        win = ArrayTimeWindow.concatenate([self.win, win2])
         self.assertEquals(win.absolute_start, 2.)
         self.assertEquals(win.absolute_end, 5.)
         self.assertEquals(win.duration(), 3.)
@@ -126,16 +126,16 @@ class WavTestCase(TestCase):
         shutil.rmtree(self.tmpdir)
 
 
-class TestWavFileSlidingWindow(WavTestCase):
+class TestWavFileTimeWindow(WavTestCase):
 
     def test_create(self):
-        win = WavFileSlidingWindow(self.files[0], 3.14)
+        win = WavFileTimeWindow(self.files[0], 3.14)
         self.assertAlmostEqual(win.absolute_start, 3.14, delta=SAMPLE_DELTA)
         self.assertAlmostEqual(win.absolute_end, 4.14, delta=SAMPLE_DELTA)
         self.assertAlmostEqual(win.duration(), 1., delta=SAMPLE_DELTA)
 
     def test_sub_window(self):
-        win = WavFileSlidingWindow(self.files[0], 3.14)
+        win = WavFileTimeWindow(self.files[0], 3.14)
         delay_start = 500 * SAMPLE_DELTA
         new_start = 3.14 + delay_start
         delay_stop = 1000 * SAMPLE_DELTA
@@ -147,7 +147,7 @@ class TestWavFileSlidingWindow(WavTestCase):
         self.assertEqual(subwin.n_samples, 500)
 
     def test_sub_sub_window(self):
-        win = WavFileSlidingWindow(self.files[0], 3.14)
+        win = WavFileTimeWindow(self.files[0], 3.14)
         new_start = 3.14 + 500 * SAMPLE_DELTA
         new_stop = 3.14 + 1000.5 * SAMPLE_DELTA
         subwin = win.get_subwindow(new_start, new_stop)
@@ -162,7 +162,7 @@ class TestWavFileSlidingWindow(WavTestCase):
         self.assertEqual(subsubwin.n_samples, 222)
 
     def test_copy_sub_window(self):
-        win = WavFileSlidingWindow(self.files[0], 3.14)
+        win = WavFileTimeWindow(self.files[0], 3.14)
         new_start = 3.14 + 500 * SAMPLE_DELTA
         new_stop = 3.14 + 1000.5 * SAMPLE_DELTA
         subwin = win.get_subwindow(new_start, new_stop)
@@ -172,27 +172,27 @@ class TestWavFileSlidingWindow(WavTestCase):
         self.assertEqual(copy.n_samples, subwin.n_samples)
 
     def test_to_array_window(self):
-        win = WavFileSlidingWindow(self.files[0], 3.14)
+        win = WavFileTimeWindow(self.files[0], 3.14)
         values = np.ones(WAV_RATE)
         array_win = win.to_array_window()
         np.testing.assert_array_equal(array_win.array, values)
 
     def test_to_array_sub_window(self):
-        win = WavFileSlidingWindow(self.files[0], 3.14)
+        win = WavFileTimeWindow(self.files[0], 3.14)
         subwin = win.get_subwindow(3.14, 3.64)  # assumes 2 devides WAV_RATE
         values = np.ones(.5 * WAV_RATE)
         array_win = subwin.to_array_window()
         np.testing.assert_array_equal(array_win.array, values)
 
 
-class TestConcatSlidingWindow(TestCase):
+class TestConcatTimeWindow(TestCase):
 
     def setUp(self):
-        self.wins = [ArraySlidingWindow(range(20, 10, -1), 2., 5),  # 2s
-                     ArraySlidingWindow(range(10), 4., 10),  # 1s
-                     ArraySlidingWindow(range(20), 5., 10),  # 2s
+        self.wins = [ArrayTimeWindow(range(20, 10, -1), 2., 5),  # 2s
+                     ArrayTimeWindow(range(10), 4., 10),  # 1s
+                     ArrayTimeWindow(range(20), 5., 10),  # 2s
                      ]
-        self.win = ConcatSlidingWindow(self.wins)
+        self.win = ConcatTimeWindow(self.wins)
 
     def test_time(self):
         self.assertAlmostEqual(self.win.absolute_start, 2.)
@@ -208,7 +208,7 @@ class TestConcatSlidingWindow(TestCase):
     def test_raises_ValueError_on_non_consecutive(self):
         self.wins[1].move(-1.)
         with self.assertRaises(ValueError):
-            ConcatSlidingWindow(self.wins)
+            ConcatTimeWindow(self.wins)
 
     def test_absolute_bounds(self):
         self.assertAlmostEquals(self.win.absolute_start, 2.)
@@ -252,7 +252,7 @@ class TestConcatSlidingWindow(TestCase):
             self.assertEqual(len(subwin.windows), 2)
 
     def test_to_array_window(self):
-        win = ConcatSlidingWindow(self.wins[1:])
+        win = ConcatTimeWindow(self.wins[1:])
         values = np.array(range(10) + range(20))
         subwin = win.get_subwindow(4., 7.)
         np.testing.assert_array_equal(win.to_array_window().array, values)
@@ -264,7 +264,7 @@ class TestConcatSlidingWindow(TestCase):
         np.testing.assert_array_equal(subwin.to_array_window().array, values)
 
 
-class TestConcatWavFileSlidingWindow(WavTestCase):
+class TestConcatWavFileTimeWindow(WavTestCase):
 
     def setUp(self):
         WavTestCase.setUp(self)

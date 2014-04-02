@@ -1,7 +1,7 @@
 from unittest import TestCase, skip
 import random
 
-from multimodal.lib.window import BasicSlidingWindow, ConcatSlidingWindow
+from multimodal.lib.window import BasicTimeWindow, ConcatTimeWindow
 from multimodal.pairing import (associate, flatten, organize_by_values,
                                 associate_samples, associate_to_window)
 
@@ -86,8 +86,8 @@ class TestModalityAssociation(TestCase):
 
 
 def get_win(labels, times):
-    wins = [BasicSlidingWindow(0., t, obj=l) for l, t in zip(labels, times)]
-    return ConcatSlidingWindow(ConcatSlidingWindow.align(wins))
+    wins = [BasicTimeWindow(0., t, obj=l) for l, t in zip(labels, times)]
+    return ConcatTimeWindow(ConcatTimeWindow.align(wins))
 
 
 class TestWindowedAssociation(TestCase):
