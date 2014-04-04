@@ -6,6 +6,15 @@ from math import ceil, floor
 
 
 TOL = 1.e-8
+TOL_INT = 1.e-3
+# Note:
+# The first tolerance value is used to compare time values,
+# the second for integers.
+# Typically the integers are indexes in an array of samples and thus the two
+# tolerance values have different scale such that:
+# TOL * SAMPLE_RATE \sim TOL_INT.
+# The dependancy to sample rate is made explicit in SampledTimeWindow and
+# _arange.
 
 
 def wavread(filepath):
@@ -16,7 +25,7 @@ def wavread(filepath):
     return sr, data
 
 
-def _to_approx_int(x, tol=TOL, above=False):
+def _to_approx_int(x, tol=TOL_INT, above=False):
     f = int(floor(x))
     c = int(ceil(x))
     if c - x < tol:
@@ -37,7 +46,8 @@ def _arange(left, right, step, include, tol=TOL):
     """Consistent arange.
        Right border is included iif approximately step | right - left.
     """
-    n_steps = _to_approx_int((right - left) * 1. / step, tol=tol, above=False)
+    n_steps = _to_approx_int((right - left) * 1. / step, tol=(tol / step),
+                             above=False)
     if n_steps < 0:
         return []
     else:
@@ -56,6 +66,9 @@ class TimeWindow(object):
 
     """Time window.
     """
+
+    def __repr__(self):
+        return "[{}->{}]".format(self.absolute_start, self.absolute_end)
 
     def duration(self):
         return self.absolute_end - self.absolute_start
@@ -84,6 +97,7 @@ class TimeWindow(object):
                                  % (t, self.absolute_end))
 
     def copy(self):
+        """Deep copy of the window objects."""
         raise NotImplemented
 
 
@@ -95,6 +109,10 @@ class BasicTimeWindow(TimeWindow):
         self.absolute_start = absolute_start
         self.absolute_end = absolute_end
         self.obj = obj
+
+    def __repr__(self):
+        return "[{}->{}: {}]".format(self.absolute_start, self.absolute_end,
+                                     repr(self.obj))
 
     def get_subwindow(self, t_start, t_end):
         self.check_time(t_start)
@@ -122,6 +140,10 @@ class SampledTimeWindow(TimeWindow):
         self.absolute_end = self.relative_to_absolute_time(
             self._samples_to_duration(n_samples))
 
+    def __repr__(self):
+        return "[{}->{} at {}]".format(self.absolute_start, self.absolute_end,
+                                       self.rate)
+
     @property
     def n_samples(self):
         raise NotImplemented
@@ -132,11 +154,12 @@ class SampledTimeWindow(TimeWindow):
     def _get_index_after(self, t):
         self.check_time(t)
         return _to_approx_int(self.absolute_to_relative_time(t) * self.rate,
-                              above=True)
+                              above=True, tol=TOL * self.rate)
 
     def _get_index_before(self, t):
         self.check_time(t)
-        return _to_approx_int(self.absolute_to_relative_time(t) * self.rate)
+        return _to_approx_int(self.absolute_to_relative_time(t) * self.rate,
+                              tol=TOL * self.rate)
 
     def get_times(self):
         rel_times = (.5 + np.arange(self.n_samples)
@@ -250,10 +273,10 @@ class ConcatTimeWindow(TimeWindow):
         if len(windows) < 1:
             raise ValueError('At least one window should be given.')
         self.windows = windows
-        if max([abs(a - b)
-                for a, b in zip(self._ends()[:-1],
-                                [w.absolute_start for w in self.windows[1:]])
-                ] + [0]) > TOL:
+        # Check for alignment (i.e. no gap or overlap between windows)
+        starts = [w.absolute_start for w in self.windows[1:]]
+        ends = self._ends()[:-1]
+        if max([abs(a - b) for a, b in zip(ends, starts)] + [0]) > TOL:
             raise ValueError('Windows are not consecutive. '
                              'Consider using ConcatTimeWindow.align.')
 
