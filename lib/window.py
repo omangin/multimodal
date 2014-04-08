@@ -17,14 +17,6 @@ TOL_INT = 1.e-3
 # _arange.
 
 
-def wavread(filepath):
-    """Open wave file. See scikits.io.wavfile.read.
-    """
-    with open(filepath, 'r') as f:
-        sr, data = wavfile.read(f)
-    return sr, data
-
-
 def _to_approx_int(x, tol=TOL_INT, above=False):
     f = int(floor(x))
     c = int(ceil(x))
@@ -217,7 +209,7 @@ class WavFileTimeWindow(SampledTimeWindow):
         """n_samples_and_rate: (total nb of samples in file, sample rate)"""
         self.path_to_file = path_to_file
         if n_samples_and_rate is None:
-            rate, samples = wavread(path_to_file)
+            rate, samples = wavfile.read(path_to_file)
             n_samples = len(samples)
         else:
             n_samples, rate = n_samples_and_rate
@@ -261,7 +253,7 @@ class WavFileTimeWindow(SampledTimeWindow):
         return new
 
     def to_array_window(self):
-        sr, samples = wavread(self.path_to_file)
+        sr, samples = wavfile.read(self.path_to_file)
         return ArrayTimeWindow(samples[self._start_after:self._stop_index],
                                self.absolute_start, sr)
 
