@@ -1,5 +1,6 @@
 """Usefull plot functions.
 Inspired (and somtime copied from http://olgabot.github.io/prettyplotlib/)
+Original author: Olga Botvinnik
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -14,11 +15,8 @@ all copies or substantial portions of the Software.
 
 
 import numpy as np
-#import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import colorConverter
-
-#import brewer2mpl
 
 
 NavyBlue = '#006EB8'
@@ -44,8 +42,6 @@ def legend(*args, **kwargs):
 
 
 def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
-        #linestyle='-', label='', marker='',
-        #linewidth=1, markersize=6.):
     """
     Plots a set of data: the mean is plotted as a standard curve,
     and an area around the curve of width twice the standard
