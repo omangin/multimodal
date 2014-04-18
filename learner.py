@@ -30,6 +30,7 @@ class MultimodalLearner(object):
         self.k = k
         self.sparseness = sparseness  # data, components, None
         self.sp_coef = sp_coef
+        self.dico = None  # None means not trained yet
 
     def train(self, data_matrices, iterations):
         n_samples = data_matrices[0].shape[0]
@@ -42,14 +43,14 @@ class MultimodalLearner(object):
         self.nmf_train = NMF(n_components=self.k, max_iter=iterations, tol=0)
         #, sparseness=self.sparseness, sp_coef=self.sp_coef)
         self.nmf_train.fit(Vtrain, scale_W=True)
+        self.dico = self.nmf_train.components_
 
     def get_dico(self, modality=None):
-        dico = self.nmf_train.components_
         if modality is None:
-            return dico
+            return self.dico
         else:
             start, stop = self.get_axis_range(modality)
-            return dico[:, start:stop]
+            return self.dico[:, start:stop]
 
     def get_stacked_dicos(self, modalities):
         return safe_hstack([self.get_dico(modality=m) for m in modalities])

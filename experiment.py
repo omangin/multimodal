@@ -133,6 +133,8 @@ class MultimodalExperiment(Experiment):
     def _perform_one_run(self):
         train, test = self.run_generator.next()
         self.logger.new_run()
+        self.logger.store('train', train)
+        self.logger.store('test', test)
         data_train = [x[train, :] for x in self.data]
         data_test = [x[test, :] for x in self.data]
         test_labels = [self.labels[t] for t in test]

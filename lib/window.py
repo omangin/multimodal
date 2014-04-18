@@ -332,6 +332,13 @@ def concat_from_list_of_wavs(files, start=None):
     return ConcatTimeWindow(file_windows)
 
 
+def save_wav(filename, concat_window):
+    """Save a wavefile from the concat time window."""
+    rate = concat_window.windows[0].rate
+    array_win = concat_window.to_array_window()
+    wavfile.write(filename, rate, array_win.array)
+
+
 def slider(t_start, t_end, width, shift, partial=False, tol=TOL):
     """Iterator over start/end time of time windows covering
     [t_start, t_end].
