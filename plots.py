@@ -73,7 +73,7 @@ def plot_k_graphs(loggers, ks, title='', metric=''):
 
 
 def plot_2k_graphs(loggers, ks, title='', metric=''):
-    figure()
+    fig = figure()
     lines = []
     for (logs, linestyle) in zip(loggers, ['-', '--']):
         lines.append({})
@@ -95,7 +95,7 @@ def plot_2k_graphs(loggers, ks, title='', metric=''):
     plt.gca().add_artist(legend1)
     plt.gca().set_ylabel('Cross-modal association score')
     plt.title(title)
-    plt.show()
+    return fig
 
 
 def plot_boxes_one_exp(logger, mods_to_mods, colors=None, xticks=False):
@@ -146,19 +146,19 @@ def plot_boxes(loggers2, logger3):
     polygons, labels = plot_boxes_one_exp_pairs(
         logger3, logger3.get_value('modalities'), colors='pairs')
     legend(polygons, labels, fig=fig,  ncol=3, loc='lower center',
-           bbox_to_anchor=(.5, .1))
+           bbox_to_anchor=(.45, .05))
     plt.title(', '.join(mods))
-    plt.show()
+    return fig
 
 
 def plot_boxes_all_mods(logger3):
-    figure()
+    fig = figure()
     mods = logger3.get_value('modalities')
     polygons, labels = plot_boxes_one_exp(logger3, combinations(mods))
     plt.gca().set_ylabel('Cross-modal association score')
     plt.title(', '.join(mods))
     legend(polygons, labels, ncol=3, loc='lower center')
-    plt.show()
+    return fig
 
 
 def plot_boxes_by_feats(loggers):
@@ -174,8 +174,9 @@ def plot_boxes_by_feats(loggers):
             ax.spines['left'].set_visible(False)
         log = loggers[feats]
         polygons, labels = plot_boxes_one_exp_pairs(log, mods, colors='pairs')
-        plt.title('\n'.join(wrap(', '.join(feats).replace('_', '-'), 15)))
+        plt.title('\n'.join(wrap(', '.join(feats).replace('_', '-'), 15)),
+                  fontsize='x-small')
     ax1.set_ylabel('Cross-modal association score')
     legend(polygons, labels, fig=fig,  ncol=3, loc='lower center',
-           bbox_to_anchor=(.5, .1))
-    plt.show()
+           bbox_to_anchor=(.4, .045))
+    return fig

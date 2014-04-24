@@ -37,13 +37,14 @@ def legend(*args, **kwargs):
        Can be used in axe mode (by setting ax=ax) or figure mode (fig=...).
        If None is given, current axe is used. If both are set, ax is used.
     """
-    facecolor = colorConverter.to_rgba('white', alpha=.9)
+    facecolor = colorConverter.to_rgba('white', alpha=.8)
     ax_or_fig = kwargs.pop('ax', kwargs.pop('fig', plt.gca()))
     if 'loc' not in kwargs:
         kwargs['loc'] = 'best'
     legend = ax_or_fig.legend(*args, frameon=True, scatterpoints=1, **kwargs)
     rect = legend.get_frame()
     rect.set_facecolor(facecolor)
+    rect.set_linewidth(0.5)
     return legend
 
 

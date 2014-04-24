@@ -7,6 +7,8 @@ import argparse
 import subprocess
 from collections import OrderedDict
 
+import matplotlib
+
 from joblib import status
 from joblib.job import Job
 from joblib.process import MultiprocessPool
@@ -25,6 +27,12 @@ parser.add_argument('action',
 parser.add_argument('-w', '--watch', action='store_true')
 parser.add_argument('-l', '--launcher', default=None,
                     choices=['process', 'torque'])
+parser.add_argument('-s', '--save', action='store_true',
+                    help="Save figures (only for plot).")
+parser.add_argument('--no-plot', action='store_true',
+                    help="Do not plot figures (only for plot).")
+parser.add_argument('--width', type=float, default=8.,
+                    help="Figure width (only for plot).")
 
 
 def has_qsub():
@@ -36,6 +44,20 @@ def has_qsub():
 WORKDIR = os.path.expanduser('~/work/data/results/multimodal/')
 SCRIPT2 = os.path.join(os.path.dirname(__file__), 'two_modalities.py')
 SCRIPT3 = os.path.join(os.path.dirname(__file__), 'three_modalities.py')
+FIGDIR = os.path.expanduser('~/work/doc/illus/results/multimodal/gen/')
+FIGRATIO = (4., 3.)
+PRINT_FIG_PARAMS = {
+        'font.family': 'serif',
+        'font.size': 10.0,
+        'font.serif': 'Computer Modern Roman',
+        'text.usetex': 'True',
+        'text.latex.unicode': 'True',
+        'axes.titlesize': 'medium',
+        'axes.labelsize': 'large',
+        'legend.fontsize': 'medium',
+        'path.simplify': 'True',
+        'savefig.bbox': 'tight',
+}
 
 args = parser.parse_args()
 LAUNCHER = args.launcher
@@ -192,7 +214,7 @@ elif ACTION == 'status':
         print_stats()
 elif ACTION == 'plot':
     import matplotlib.pyplot as plt
-    plt.interactive(True)
+    plt.interactive(not args.no_plot)
     from multimodal.plots import (plot_2k_graphs, plot_boxes,
                                   plot_boxes_by_feats, plot_boxes_all_mods)
     LOGGERS_2 = collect_results()
@@ -202,10 +224,26 @@ elif ACTION == 'plot':
     #plot_k_graphs(LOGGERS_2, Ks, title='Cosine', metric='_cosine')
     #plot_k_graphs(LOGGERS_3, Ks, title='KL 3')
     #plot_k_graphs(LOGGERS_3, Ks, title='Cosine 3', metric='_cosine')
-    plot_2k_graphs([LOGGERS_2, LOGGERS_3], Ks,
-                   title='Cosine', metric='_cosine')
+    fig_2k = plot_2k_graphs([LOGGERS_2, LOGGERS_3], Ks,
+                            title='Cosine', metric='_cosine')
     idx50 = Ks.index(50)
-    plot_boxes({mods: LOGGERS_2[mods][idx50] for mods in LOGGERS_2},
-               LOGGERS_3[('image', 'motion')][idx50])
-    plot_boxes_by_feats(LOGGERS_IMAGE)
-    plot_boxes_all_mods(LOGGERS_3[('image', 'motion')][idx50])
+    fig_one2one = plot_boxes(
+        {mods: LOGGERS_2[mods][idx50] for mods in LOGGERS_2},
+        LOGGERS_3[('image', 'motion')][idx50])
+    fig_feats = plot_boxes_by_feats(LOGGERS_IMAGE)
+    fig_all_mod = plot_boxes_all_mods(LOGGERS_3[('image', 'motion')][idx50])
+    if args.save:
+        size = (args.width, args.width * FIGRATIO[1] / FIGRATIO[0])
+        matplotlib.rcParams.update(PRINT_FIG_PARAMS)
+        by_name = {'one_to_one_all_k': fig_2k,
+                   'one_to_one_all': fig_one2one,
+                   'image_feats': fig_feats,
+                   'three_modalities': fig_all_mod,
+                   }
+        for name in by_name:
+            for out in ['.svg', '.pdf']:
+                path = os.path.join(FIGDIR, name + out)
+                fig = by_name[name]
+                fig.set_size_inches(*size)
+                fig.savefig(path, transparent=True)
+                print('Written: {}.'.format(path))
