@@ -33,9 +33,15 @@ def plot(*args, **kwargs):
 
 
 def legend(*args, **kwargs):
+    """Custom legend.
+       Can be used in axe mode (by setting ax=ax) or figure mode (fig=...).
+       If None is given, current axe is used. If both are set, ax is used.
+    """
     facecolor = colorConverter.to_rgba('white', alpha=.9)
-    ax = kwargs.pop('ax', plt.gca())
-    legend = ax.legend(*args, frameon=True, scatterpoints=1, **kwargs)
+    ax_or_fig = kwargs.pop('ax', kwargs.pop('fig', plt.gca()))
+    if 'loc' not in kwargs:
+        kwargs['loc'] = 'best'
+    legend = ax_or_fig.legend(*args, frameon=True, scatterpoints=1, **kwargs)
     rect = legend.get_frame()
     rect.set_facecolor(facecolor)
     return legend
@@ -80,9 +86,10 @@ def boxplot(x, ax=None, **kwargs):
     percentile. The difference from matplotlib is only the left axis line is
     shown, and ticklabels labeling each category of data can be added.
 
-    @param ax:
     @param x:
-    @param kwargs:
+    @param ax:
+    @param xticklabel: iterable with labels or None (default) for numbers or
+        [] for no labels.
     @return:
     """
     if ax is None:
@@ -93,7 +100,7 @@ def boxplot(x, ax=None, **kwargs):
     if 'widths' not in kwargs:
         kwargs['widths'] = 0.15
     bp = ax.boxplot(x, **kwargs)
-    if xticklabels:
+    if xticklabels is not None:
         ax.xaxis.set_ticklabels(xticklabels)
 
     remove_chartjunk(ax, ['top', 'right', 'bottom'])

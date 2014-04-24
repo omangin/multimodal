@@ -20,6 +20,12 @@ PAIRS_COLORS = {('image', 'motion'): '#006EB8',
                 }
 
 
+def figure(**kwargs):
+    if 'frameon' not in kwargs:
+        kwargs['frameon'] = False
+    return plt.figure(**kwargs)
+
+
 def get_color_for_modalities(mods1, mods2, colors=None):
     if colors == 'pairs':
         return PAIRS_COLORS[mods1[0], mods2[0]]
@@ -55,7 +61,7 @@ def plot_one_curve(loggers, mods, ks, metric='', linestyle='-',
 
 
 def plot_k_graphs(loggers, ks, title='', metric=''):
-    plt.figure()
+    figure()
     for mod1, mod2 in loggers:
         plot_one_curve(loggers[(mod1, mod2)], ([mod1], [mod2]), ks,
                        metric=metric)
@@ -67,7 +73,7 @@ def plot_k_graphs(loggers, ks, title='', metric=''):
 
 
 def plot_2k_graphs(loggers, ks, title='', metric=''):
-    plt.figure()
+    figure()
     lines = []
     for (logs, linestyle) in zip(loggers, ['-', '--']):
         lines.append({})
@@ -87,36 +93,41 @@ def plot_2k_graphs(loggers, ks, title='', metric=''):
                    linestyle='--')],
            ['Trained on two modalities.', 'Trained on all three modalities.'])
     plt.gca().add_artist(legend1)
+    plt.gca().set_ylabel('Cross-modal association score')
     plt.title(title)
     plt.show()
 
 
-def plot_boxes_one_exp(logger, mods_to_mods, colors=None):
+def plot_boxes_one_exp(logger, mods_to_mods, colors=None, xticks=False):
     ax = plt.gca()
     ax.yaxis.grid(True, color='lightgrey')
     plt.ylim(0, 1)
     vals = [logger.get_values("score_{}2{}_cosine".format('_'.join(mods1),
                                                           '_'.join(mods2)))
             for mods1, mods2 in mods_to_mods]
-    boxes = boxplot(vals)['boxes']
+    boxes = boxplot(vals, xticklabels=[])['boxes']
+    polygons = []
     for box, mods in zip(boxes, mods_to_mods):
         coords = zip(box.get_xdata(), box.get_ydata())
-        p = plt.Polygon(coords,
-                facecolor=get_color_for_modalities(*mods, colors=colors),
-                alpha=.8)
+        fcolor = get_color_for_modalities(*mods, colors=colors)
+        p = plt.Polygon(coords, facecolor=fcolor, alpha=.8)
         ax.add_patch(p)
+        polygons.append(p)
     labels = ['{} $\\rightarrow$ {}'.format(', '.join(mod1), ', '.join(mod2))
               for mod1, mod2 in mods_to_mods]
-    plt.xticks(range(1, 1 + len(mods_to_mods)),
-               labels, rotation=25, ha='right')
+    if xticks:
+        plt.xticks(range(1, 1 + len(mods_to_mods)),
+                   labels, rotation=25, ha='right')
+    return polygons, labels
 
 
-def plot_boxes_one_exp_pairs(logger, mods, colors=None):
-    plot_boxes_one_exp(logger, all_pairs(mods), colors=colors)
+def plot_boxes_one_exp_pairs(logger, mods, colors=None, xticks=False):
+    return plot_boxes_one_exp(logger, all_pairs(mods), colors=colors,
+                              xticks=xticks)
 
 
 def plot_boxes(loggers2, logger3):
-    plt.figure()
+    fig = figure()
     nb_pairs = len(loggers2)
     for i, mods in enumerate(loggers2):
         if i == 0:
@@ -132,22 +143,26 @@ def plot_boxes(loggers2, logger3):
     ax = plt.subplot(1, 2, 2, sharey=ax1)
     ax.label_outer()
     ax.spines['left'].set_visible(False)
-    plot_boxes_one_exp_pairs(logger3, logger3.get_value('modalities'),
-                             colors='pairs')
+    polygons, labels = plot_boxes_one_exp_pairs(
+        logger3, logger3.get_value('modalities'), colors='pairs')
+    legend(polygons, labels, fig=fig,  ncol=3, loc='lower center',
+           bbox_to_anchor=(.5, .1))
     plt.title(', '.join(mods))
     plt.show()
 
 
 def plot_boxes_all_mods(logger3):
-    plt.figure()
+    figure()
     mods = logger3.get_value('modalities')
-    plot_boxes_one_exp(logger3, combinations(mods))
+    polygons, labels = plot_boxes_one_exp(logger3, combinations(mods))
+    plt.gca().set_ylabel('Cross-modal association score')
     plt.title(', '.join(mods))
+    legend(polygons, labels, ncol=3, loc='lower center')
     plt.show()
 
 
 def plot_boxes_by_feats(loggers):
-    plt.figure()
+    fig = figure()
     mods = ('image', 'sound')
     nb_feats = len(loggers)
     for i, feats in enumerate(loggers):
@@ -158,6 +173,9 @@ def plot_boxes_by_feats(loggers):
             ax.label_outer()
             ax.spines['left'].set_visible(False)
         log = loggers[feats]
-        plot_boxes_one_exp_pairs(log, mods, colors='pairs')
+        polygons, labels = plot_boxes_one_exp_pairs(log, mods, colors='pairs')
         plt.title('\n'.join(wrap(', '.join(feats).replace('_', '-'), 15)))
+    ax1.set_ylabel('Cross-modal association score')
+    legend(polygons, labels, fig=fig,  ncol=3, loc='lower center',
+           bbox_to_anchor=(.5, .1))
     plt.show()
