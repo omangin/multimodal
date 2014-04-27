@@ -163,14 +163,9 @@ def remove_chartjunk(ax, spines, grid=None, ticklabels=None):
 
     if ticklabels is not None:
         if type(ticklabels) is str:
-            assert ticklabels in set(('x', 'y'))
-            if ticklabels == 'x':
-                ax.set_xticklabels([])
-            if ticklabels == 'y':
-                ax.set_yticklabels([])
-        else:
-            assert set(ticklabels) | set(('x', 'y')) > 0
-            if 'x' in ticklabels:
-                ax.set_xticklabels([])
-            elif 'y' in ticklabels:
-                ax.set_yticklabels([])
+            ticklabels = [ticklabels]
+        assert set(ticklabels) | set(('x', 'y')) > 0
+        if 'x' in ticklabels:
+            ax.set_xticklabels([])
+        elif 'y' in ticklabels:
+            ax.set_yticklabels([])

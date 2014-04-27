@@ -87,13 +87,13 @@ def plot_2k_graphs(loggers, ks, title='', metric=''):
             lines[-1][mod_to_mod_str(mod1, mod2)] = l1
             lines[-1][mod_to_mod_str(mod2, mod1)] = l2
     legend1 = legend(lines[0].values(), lines[0].keys(), loc=4)
-    legend([Line2D(range(3), range(3), color='black', linewidth=2,
-                   linestyle='-'),
-            Line2D(range(3), range(3), color='black', linewidth=2,
-                   linestyle='--')],
+    legend([Line2D(range(5), range(5), color='black', linestyle='-'),
+            Line2D(range(5), range(5), color='black', linestyle='--')],
            ['Trained on two modalities.', 'Trained on all three modalities.'])
-    plt.gca().add_artist(legend1)
-    plt.gca().set_ylabel('Cross-modal association score')
+    ax = plt.gca()
+    ax.add_artist(legend1)
+    ax.set_xlabel('k')
+    ax.set_ylabel('Cross-modal association score')
     plt.title(title)
     return fig
 
