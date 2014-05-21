@@ -164,6 +164,13 @@ class TestFitTransform(unittest.TestCase):
         W, errors = self.nmf.fit_transform(X, return_errors=True)
         self.assertTrue(errors[-1] < errors[0] * 1.e-3)
 
+    def test_no_compenents_update(self):
+        components = random_NN_matrix((3, 5))
+        self.nmf.components_ = components
+        self.nmf.fit_transform(random_NN_matrix((10, 5)), components,
+            _fit=False)
+        self.assertTrue((self.nmf.components_ == components).all())
+
 
 class TestSparseDot(unittest.TestCase):
 
