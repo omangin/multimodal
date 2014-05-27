@@ -8,7 +8,8 @@ from scipy.io import savemat, loadmat
 
 from multimodal.local import CONFIG
 from multimodal.db.acorns import load
-from multimodal.features.hac import wav2hac, build_codebooks_from_list_of_wav
+from multimodal.features.hac import (wav2hac, build_codebooks_from_list_of_wav,
+                                     MFCC_PARAMS)
 
 
 CODEBOOK_PATH = os.path.join(CONFIG['feat-dir'], "acorns_codebook.mat")
@@ -23,7 +24,8 @@ if BUILD_CODEBOOK:
         all_records.extend(sum(db.records, []))
     codebooks = build_codebooks_from_list_of_wav(
         [r.get_audio_path() for r in all_records], KS)
-    savemat(CODEBOOK_PATH, {'codebooks': codebooks})
+    savemat(CODEBOOK_PATH, {'codebooks': codebooks,
+                            'mfcc_params': MFCC_PARAMS})
 else:
     codebooks = loadmat(CODEBOOK_PATH)['codebooks']
 
@@ -40,4 +42,5 @@ for year in [1, 2]:
         feat_file = os.path.join(
             CONFIG['feat-dir'],
             "acorns_HAC_Y%d_S%0.2d_python.mat" % (year, 1 + speaker))
-        savemat(feat_file, {'hac': hacs})
+        savemat(feat_file, {'hac': hacs, 'codebooks': codebooks,
+                            'mfcc_params': MFCC_PARAMS})
