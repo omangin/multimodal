@@ -6,6 +6,14 @@ from librosa.feature import delta, melspectrogram
 from librosa.filters import dct
 
 
+"""Implementation of the histograms of acoustic co-occurrences (HAC)
+from [VanHamme2008].
+
+.. [VanHamme2008] Van Hamme, Hugo "HAC-models: a Novel Approach to Continuous
+                  Speech Recognition", Interspeech ISCA (2008)
+"""
+
+
 # Default parmeters for MFCC used in Louis Matlab code
 # fs       = 16000; : sample frequency in Hz
 # ncep     = 13;    : number of cepstra
@@ -26,7 +34,8 @@ MFCC_PARAMS = {
 
 
 def mfcc(data, sr=22050, n_mfcc=20, **kwargs):
-    """Mel-frequency cepstral coefficients
+    """Mel-frequency cepstral coefficients (original function from librosa,
+    modified to accept additional parameters).
 
     :parameters:
       - data  : np.ndarray or None
@@ -54,6 +63,19 @@ def build_codebook(data, k):
 
 
 def build_codebooks_from_list_of_wav(wavs, ks):
+    """Generates three codebooks of low level units from a list of wav files.
+
+    The three codebooks corresponds to a quantization of MFCC vectors
+    from the sound files as well as their first and second order time
+    derivatives.
+
+    :parameters:
+        - ks: triple of int
+            Number of elements in each code book.
+
+    :returns:
+        triple of codebooks as (k, d) arrays
+    """
     mfccs = []
     d_mfccs = []
     dd_mfccs = []
@@ -71,6 +93,21 @@ def build_codebooks_from_list_of_wav(wavs, ks):
 
 
 def coocurrences(quantized_data, n_quantized, lag):
+    """Computes coocurrences counts from a quantized time serie.
+
+    A coocurrence of values a and b is the event of the value being observed
+    observed at time t and the value b at time t + lag. It is represented as
+    the pair (a, b) and coded as an int.
+
+    :parameters:
+        - quantized_data: one dimensional array
+        - n_quantized: int
+            size of the codebook, should be greater than max(quantized_data)
+        - lag: int
+
+    :returns:
+        the vector of count that is of size (n_quantized^2,)
+    """
     pair_idx = quantized_data[lag:] * n_quantized + quantized_data[:-lag]
     return np.bincount(pair_idx, minlength=n_quantized ** 2)
 
@@ -82,6 +119,17 @@ def compute_coocurrences(data, centroids, lags):
 
 
 def hac(data, sr, codebooks, lags=[5, 2]):
+    """Histogram of acoustic coocurrence (see [VanHamme2008]).
+
+    A vector of counts is returned instead of an actual histogram.
+
+    :parameters:
+        - data: time serie
+        - sr: sample rate
+        - codebooks: triple of codebooks
+        - lags: a list of lags to use (the corresponding histograms are
+            concatenated).
+    """
     mfccs = mfcc(data, sr=sr, **MFCC_PARAMS)
     d_mfccs = delta(mfccs)
     dd_mfccs = delta(mfccs, order=2)
