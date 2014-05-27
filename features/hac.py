@@ -28,17 +28,6 @@ MFCC_PARAMS = {
 def mfcc(data, sr=22050, n_mfcc=20, **kwargs):
     """Mel-frequency cepstral coefficients
 
-    :usage:
-        >>> # Generate mfccs from a time series
-        >>> mfccs = librosa.feature.mfcc(y=y, sr=sr)
-
-        >>> # Use a pre-computed log-power Mel spectrogram
-        >>> S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-        >>> mfccs = librosa.feature.mfcc(S=librosa.logamplitude(S))
-
-        >>> # Get more components
-        >>> mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
-
     :parameters:
       - data  : np.ndarray or None
           audio time series
@@ -93,7 +82,7 @@ def compute_coocurrences(data, centroids, lags):
 
 
 def hac(data, sr, codebooks, lags=[5, 2]):
-    mfccs = mfcc(y=data, sr=sr, **MFCC_PARAMS)
+    mfccs = mfcc(data, sr=sr, **MFCC_PARAMS)
     d_mfccs = delta(mfccs)
     dd_mfccs = delta(mfccs, order=2)
     streams = [mfccs.T, d_mfccs.T, dd_mfccs.T]

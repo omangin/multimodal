@@ -12,7 +12,6 @@ __date__ = '08/2012'
 import os
 
 from scipy.io import loadmat
-import scipy.sparse as sp
 
 from ..local import CONFIG
 from .models.loader import Loader

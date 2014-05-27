@@ -27,7 +27,7 @@ if BUILD_CODEBOOK:
     savemat(CODEBOOK_PATH, {'codebooks': codebooks,
                             'mfcc_params': MFCC_PARAMS})
 else:
-    codebooks = loadmat(CODEBOOK_PATH)['codebooks']
+    codebooks = loadmat(CODEBOOK_PATH)['codebooks'].flatten().tolist()
 
 
 # Compute histograms
