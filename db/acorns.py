@@ -95,13 +95,13 @@ def load_features(year, speaker, blacklist=False):
     check_year(year)
     check_speaker(year, speaker)
     feat_file = os.path.join(CONFIG['feat-dir'],
-                             "acorns_HAC_Y%d_S%0.2d.mat" % (year, 1 + speaker))
-    hac_mat = loadmat(feat_file)
-    hacs = list(hac_mat['FFFF'][0])  # HAC representation of records
-    if blacklist:
-        for r in (BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2)[speaker]:
-            hacs.pop(r)
-    # Compute sound data matrix
-    Xsound = sp.vstack([h.T for h in hacs]).tocsr()
+                             "acorns_HAC_Y%d_S%0.2d_python.mat" % (year, 1 + speaker))
+    Xsound = loadmat(feat_file)['hac']
     # CSR format, shape: (n, b)
+    if blacklist:
+        all_records = range(Xsound.shape[0])
+        for r in (BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2)[speaker]:
+            all_records.pop(r)
+        Xsound = Xsound[all_records, :]
+
     return Xsound
