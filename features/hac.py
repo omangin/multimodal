@@ -1,7 +1,9 @@
 import numpy as np
 from scipy.cluster.vq import vq, kmeans2
 from scipy.io import wavfile
-from librosa.feature import mfcc, delta
+from librosa import logamplitude
+from librosa.feature import delta, melspectrogram
+from librosa.filters import dct
 
 
 # Default parmeters for MFCC used in Louis Matlab code
@@ -15,10 +17,46 @@ from librosa.feature import mfcc, delta
 # deriv    = 0;     : compute the deltas (use 1) and deltas-deltas (use 2)
 #                     (default 0)
 
-N_MFCC = 13   # Librosa default is 20
-#N_FFT = 320   # Librosa default is 2048
-#HOP_LENGTH = 160  # Librosa default is 512
-#N_MELS = 30  # Librosa default is 128
+MFCC_PARAMS = {
+    'n_mfcc': 13,   # Librosa default is 20
+    'n_fft': 320,   # Librosa default is 2048
+    'hop_length': 160,  # Librosa default is 512
+}
+# N_MELS = 30  # Librosa default is 128
+
+
+def mfcc(data, sr=22050, n_mfcc=20, **kwargs):
+    """Mel-frequency cepstral coefficients
+
+    :usage:
+        >>> # Generate mfccs from a time series
+        >>> mfccs = librosa.feature.mfcc(y=y, sr=sr)
+
+        >>> # Use a pre-computed log-power Mel spectrogram
+        >>> S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
+        >>> mfccs = librosa.feature.mfcc(S=librosa.logamplitude(S))
+
+        >>> # Get more components
+        >>> mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
+
+    :parameters:
+      - data  : np.ndarray or None
+          audio time series
+      - sr    : int > 0
+          sampling rate of y
+      - n_mfcc: int
+          number of MFCCs to return
+
+    .. note::
+        additional keyword arguments are passed to the melspectrogram function.
+
+    :returns:
+      - M     : np.ndarray, shape=(n_mfcc, S.shape[1])
+          MFCC sequence
+
+    """
+    S = logamplitude(melspectrogram(y=data, sr=sr, **kwargs))
+    return np.dot(dct(n_mfcc, S.shape[0]), S)
 
 
 def build_codebook(data, k):
@@ -33,7 +71,7 @@ def build_codebooks_from_list_of_wav(wavs, ks):
     for w in wavs:
         print("preprocessing {}".format(w))
         sr, data = wavfile.read(w)
-        cur_mfccs = mfcc(y=data, sr=sr, n_mfcc=N_MFCC)
+        cur_mfccs = mfcc(data, sr=sr, **MFCC_PARAMS)
         mfccs.append(cur_mfccs.T)
         d_mfccs.append(delta(cur_mfccs).T)
         dd_mfccs.append(delta(cur_mfccs, order=2).T)
@@ -55,7 +93,7 @@ def compute_coocurrences(data, centroids, lags):
 
 
 def hac(data, sr, codebooks, lags=[5, 2]):
-    mfccs = mfcc(y=data, sr=sr, n_mfcc=N_MFCC)
+    mfccs = mfcc(y=data, sr=sr, **MFCC_PARAMS)
     d_mfccs = delta(mfccs)
     dd_mfccs = delta(mfccs, order=2)
     streams = [mfccs.T, d_mfccs.T, dd_mfccs.T]
