@@ -1,0 +1,43 @@
+#!/usr/bin/env python2
+
+
+import os
+
+import scipy.sparse as sp
+from scipy.io import savemat, loadmat
+
+from multimodal.local import CONFIG
+from multimodal.db.acorns import load
+from multimodal.features.hac import wav2hac, build_codebooks_from_list_of_wav
+
+
+CODEBOOK_PATH = os.path.join(CONFIG['feat-dir'], "acorns_codebook.mat")
+KS = [150, 150, 100]
+BUILD_CODEBOOK = True
+
+if BUILD_CODEBOOK:
+    # Build codebook
+    all_records = []
+    for year in [1, 2]:
+        db = load(year)
+        all_records.extend(sum(db.records, []))
+    codebooks = build_codebooks_from_list_of_wav(
+        [r.get_audio_path() for r in all_records], KS)
+    savemat(CODEBOOK_PATH, {'codebooks': codebooks})
+else:
+    codebooks = loadmat(CODEBOOK_PATH)['codebooks']
+
+
+# Compute histograms
+for year in [1, 2]:
+    db = load(year)
+    for speaker, records in enumerate(db.records):
+        hacs = []
+        for r in records:
+            print(r)
+            hacs.append(sp.csr_matrix(wav2hac(r.get_audio_path(), codebooks)))
+        hacs = sp.vstack(hacs)
+        feat_file = os.path.join(
+            CONFIG['feat-dir'],
+            "acorns_HAC_Y%d_S%0.2d_python.mat" % (year, 1 + speaker))
+        savemat(feat_file, {'hac': hacs})

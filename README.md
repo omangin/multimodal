@@ -55,3 +55,4 @@ Requirements
 - python 2.7
 - numpy
 - scipy
+- [librosa](http://github.com/bmcfee/librosa) (for sound feature computation)
