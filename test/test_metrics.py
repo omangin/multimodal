@@ -18,6 +18,7 @@ def random_NN_matrix(h, w):
 class TestGenenralizedKL(unittest.TestCase):
 
     def setUp(self):
+        np.random.seed(42)
         self.x = random_NN_matrix(10, 15)
         self.y = random_NN_matrix(10, 15)
 
