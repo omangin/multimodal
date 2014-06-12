@@ -77,7 +77,7 @@ def iterative_kmeans(data, k, alpha=0.01):
         has_max_points = counts.argmax()
         # Get svd for points associated
         associated = (quantized == has_max_points).nonzero()[0]
-        u, s, v = np.linalg.svd(data[quantized, :])
+        u, s, v = np.linalg.svd(data[associated, :])
         p = v[0, :] * np.sqrt(s[0])
         # Split centroid
         p1 = centroids[has_max_points] + alpha * p
