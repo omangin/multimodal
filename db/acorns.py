@@ -90,11 +90,16 @@ def load_features_and_labels(year, speaker, blacklist=False, db_file=None):
     return Xsound, labels, db.tags
 
 
+def feature_file_name(year, speaker):
+    return "acorns_HAC_Y{:d}_S{:02d}_python.mat".format(year, 1 + speaker)
+
+
 def load_features(year, speaker, blacklist=False):
     check_year(year)
     check_speaker(year, speaker)
-    feat_file = os.path.join(CONFIG['feat-dir'],
-                             "acorns_HAC_Y%d_S%0.2d_python.mat" % (year, 1 + speaker))
+    feat_file = os.path.join(feature_directory,
+                             feature_file_name(year, speaker))
+
     Xsound = loadmat(feat_file)['hac']
     # CSR format, shape: (n, b)
     if blacklist:
