@@ -24,7 +24,7 @@ import scipy.sparse as sp
 from scipy.io import savemat, loadmat
 
 from multimodal.local import CONFIG
-from multimodal.db.acorns import load
+from multimodal.db.acorns import load, feature_file_name
 from multimodal.features.hac import (wav2hac, build_codebooks_from_list_of_wav,
                                      MFCC_PARAMS)
 
@@ -33,14 +33,18 @@ CODEBOOK_PATH = os.path.join(CONFIG['feat-dir'], "acorns_codebook.mat")
 KS = [150, 150, 100]
 BUILD_CODEBOOK = False
 
-if BUILD_CODEBOOK:
-    # Build codebook
+
+def build_acorns_codebook(ks=KS):
     all_records = []
     for year in [1, 2]:
         db = load(year)
         all_records.extend(sum(db.records, []))
-    codebooks = build_codebooks_from_list_of_wav(
-        [r.get_audio_path() for r in all_records], KS)
+    return build_codebooks_from_list_of_wav(
+        [r.get_audio_path() for r in all_records], ks)
+
+
+if BUILD_CODEBOOK:
+    codebooks = build_acorns_codebook()
     savemat(CODEBOOK_PATH, {'codebooks': codebooks,
                             'mfcc_params': MFCC_PARAMS})
 else:
@@ -56,8 +60,7 @@ for year in [1, 2]:
             print(r)
             hacs.append(sp.csr_matrix(wav2hac(r.get_audio_path(), codebooks)))
         hacs = sp.vstack(hacs)
-        feat_file = os.path.join(
-            CONFIG['feat-dir'],
-            "acorns_HAC_Y%d_S%0.2d_python.mat" % (year, 1 + speaker))
+        feat_file = os.path.join(CONFIG['feat-dir'],
+                                 feature_file_name(year, speaker))
         savemat(feat_file, {'hac': hacs, 'codebooks': codebooks,
                             'mfcc_params': MFCC_PARAMS})
