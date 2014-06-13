@@ -4,13 +4,12 @@
 import os
 import time
 import argparse
-import subprocess
 from collections import OrderedDict
 
 from joblib import status
 from joblib.job import Job
 from joblib.process import MultiprocessPool
-from joblib.torque import TorquePool
+from joblib.torque import TorquePool, has_qsub
 
 from multimodal.experiment import (TwoModalitiesExperiment,
                                    ThreeModalitiesExperiment)
@@ -36,12 +35,6 @@ parser.add_argument('--plot-dest', default=None,
 parser.add_argument('--plot-format', default='svg',
                     help="Plot format, should be accepted by matplotlib "
                          "(only for saving plots).")
-
-
-def has_qsub():
-    with open(os.devnull) as devnull:
-        return subprocess.call(['which', 'qsub'], stdout=devnull,
-                               stderr=devnull) == 0
 
 
 WORKDIR = os.path.expanduser('~/work/data/results/multimodal/')
