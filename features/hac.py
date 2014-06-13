@@ -13,7 +13,6 @@ from [VanHamme2008] and [Driesen2012].
                   Speech Recognition", Interspeech ISCA (2008)
 .. [Driesen2012] Driesen, Joris "Discovering words in speech using matrix
                  factorization", PhD thesis (2012)
-               
 """
 
 
@@ -30,10 +29,16 @@ from [VanHamme2008] and [Driesen2012].
 
 MFCC_PARAMS = {
     'n_mfcc': 13,   # Librosa default is 20
-    'n_fft': 320,   # Librosa default is 2048
-    'hop_length': 160,  # Librosa default is 512
+#    'n_fft': 320,   # Librosa default is 2048
+#    'hop_length': 160,  # Librosa default is 512
+#    'n_mels': 30,  # Librosa default is 128
 }
-# N_MELS = 30  # Librosa default is 128
+
+
+def complete_mfcc_params(values):
+    mfcc_params = MFCC_PARAMS.copy()
+    mfcc_params.update(values)
+    return mfcc_params
 
 
 def mfcc(data, sr=22050, n_mfcc=20, **kwargs):
@@ -102,7 +107,7 @@ def build_codebook(data, k, mode='raw'):
     return codebook
 
 
-def build_codebooks_from_list_of_wav(wavs, ks, mode='raw'):
+def build_codebooks_from_list_of_wav(wavs, ks, mode='raw', **mfcc_params):
     """Generates three codebooks of low level units from a list of wav files.
 
     The three codebooks corresponds to a quantization of MFCC vectors
@@ -113,6 +118,8 @@ def build_codebooks_from_list_of_wav(wavs, ks, mode='raw'):
         - ks: triple of int
             Number of elements in each code book.
 
+        - mode: iterative|raw
+
     :returns:
         triple of codebooks as (k, d) arrays
     """
@@ -120,22 +127,25 @@ def build_codebooks_from_list_of_wav(wavs, ks, mode='raw'):
     for w in wavs:
         print("preprocessing {}".format(w))
         sr, data = wavfile.read(w)
-        cur_mfccs = mfcc(data, sr=sr, **MFCC_PARAMS)
+        cur_mfccs = mfcc(data, sr=sr, **complete_mfcc_params(mfcc_params))
         mfccs.append(cur_mfccs)
         #mfccs.append(cur_mfccs.T)
         #d_mfccs.append(delta(cur_mfccs).T)
         #dd_mfccs.append(delta(cur_mfccs, order=2).T)
     print("Building codebooks:")
     print("- MFCC...")
-    cdb_mfcc = build_codebook(np.vstack([m.T for m in mfccs]), ks[0], mode=mode)
+    cdb_mfcc = build_codebook(np.vstack([m.T for m in mfccs]),
                               ks[0], mode=mode)
     print("- Delta MFCC...")
-    cdb_dmfcc = build_codebook(np.vstack([delta(m).T for m in mfccs]), ks[1], mode=mode)
+    cdb_dmfcc = build_codebook(np.vstack([delta(m).T for m in mfccs]),
                                ks[1], mode=mode)
     print("- Delta Delta MFCC...")
-    cdb_ddmfcc = build_codebook(np.vstack([delta(m, order=2).T for m in mfccs]), ks[2], mode=mode)
-            np.vstack([delta(m, order=2).T for m in mfccs]),
-            ks[2], mode=mode)
+    cdb_ddmfcc = build_codebook(
+        np.vstack([delta(m, order=2).T for m in mfccs]),
+        ks[2], mode=mode)
+    #return (build_codebook(np.vstack(mfccs), ks[0], mode=mode),
+    #        build_codebook(np.vstack(d_mfccs), ks[1], mode=mode),
+    #        build_codebook(np.vstack(dd_mfccs), ks[2], mode=mode))
     return (cdb_mfcc, cdb_dmfcc, cdb_ddmfcc)
 
 
@@ -165,7 +175,7 @@ def compute_coocurrences(data, centroids, lags):
     return np.hstack(coocs)
 
 
-def hac(data, sr, codebooks, lags=[5, 2]):
+def hac(data, sr, codebooks, lags=[5, 2], **mfcc_params):
     """Histogram of acoustic coocurrence (see [VanHamme2008]).
 
     A vector of counts is returned instead of an actual histogram.
@@ -177,7 +187,7 @@ def hac(data, sr, codebooks, lags=[5, 2]):
         - lags: a list of lags to use (the corresponding histograms are
             concatenated).
     """
-    mfccs = mfcc(data, sr=sr, **MFCC_PARAMS)
+    mfccs = mfcc(data, sr=sr, **complete_mfcc_params(mfcc_params))
     d_mfccs = delta(mfccs)
     dd_mfccs = delta(mfccs, order=2)
     streams = [mfccs.T, d_mfccs.T, dd_mfccs.T]
@@ -186,6 +196,6 @@ def hac(data, sr, codebooks, lags=[5, 2]):
                       ])
 
 
-def wav2hac(wav_path, codebooks, lags=[5, 2]):
+def wav2hac(wav_path, codebooks, lags=[5, 2], **mfcc_params):
     sr, data = wavfile.read(wav_path)
-    return hac(data, sr, codebooks, lags=lags)
+    return hac(data, sr, codebooks, lags=lags, **mfcc_params)
