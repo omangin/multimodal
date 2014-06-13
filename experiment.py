@@ -73,7 +73,7 @@ class MultimodalExperiment(Experiment):
         # Generate pairing
         raw_labels = [loader.get_labels() for loader in self.loaders]
         (label_assoc, labels, assoc_idx) = associate_labels(
-                raw_labels, shuffle=self.shuffle_labels)
+            raw_labels, shuffle=self.shuffle_labels)
         self.label_association = label_assoc
         self.labels_all = labels
         self.data = [x[[idx[i] for idx in assoc_idx], :]
@@ -82,14 +82,14 @@ class MultimodalExperiment(Experiment):
         self.logger.store_global('sample-pairing', assoc_idx)
         if self.debug:  # Reduce size of data for quick execution
             self.logger.log(
-                    'WARNING: Debug mode active, using subset of the database')
+                'WARNING: Debug mode active, using subset of the database')
             self.data = [x[:200, :11] for x in self.data]
             self.labels_all = self.labels_all[:200]
         # Extract examples for evaluation
         self.examples = chose_examples([l for l in self.labels_all])
         self.logger.store_global('examples', self.examples)
         self.others = [i for i in range(len(self.labels_all))
-                         if i not in self.examples]
+                       if i not in self.examples]
         self.data_ex = [x[self.examples, :] for x in self.data]
         self.data = [x[self.others, :] for x in self.data]
         self.labels_ex = [self.labels_all[i] for i in self.examples]
@@ -129,7 +129,7 @@ class MultimodalExperiment(Experiment):
         try:
             self.logger.save()
         except self.logger.NoFileError:
-            print 'Not saving logs: no destination was provided.'
+            print('Not saving logs: no destination was provided.')
 
     def _perform_one_run(self):
         train, test = self.run_generator.next()
@@ -140,10 +140,10 @@ class MultimodalExperiment(Experiment):
         # Init Learner
         learner = MultimodalLearner(self.modalities, self.n_features,
                                     self.coefs, self.k)
-        ## Train
+        # Train
         learner.train(data_train, self.iter_train)
         self.logger.store('dictionary', learner.get_dico())
-        ## Test
+        # Test
         self._evaluate(learner, data_test, test_labels)
 
     def _evaluate(self, learner, test, labels):
@@ -220,8 +220,8 @@ class TwoModalitiesExperiment(MultimodalExperiment):
                                     self.labels_ex, metric)
                 # Conpute score
                 self.logger.store_result(
-                        self._get_score_key(mod1, mod2, mod_cmp, suffix),
-                        found_labels_to_score(test_labels, found))
+                    self._get_score_key(mod1, mod2, mod_cmp, suffix),
+                    found_labels_to_score(test_labels, found))
 
     def _get_all_transformations(self, learner, data_set):
         """Computes all transformations of data.
@@ -239,15 +239,15 @@ class TwoModalitiesExperiment(MultimodalExperiment):
             for out_mod in range(self.n_modalities):
                 if out_mod != in_mod:
                     out[in_mod][out_mod] = learner.reconstruct_modality(
-                            self.modalities[out_mod], internals[in_mod])
+                        self.modalities[out_mod], internals[in_mod])
             out[in_mod].append(internals[in_mod])
         return out
 
     def _get_score_key(self, mod1, mod2, mod_cmp, metric):
         return "score_{}2{}{}{}".format(
-                self.modalities[mod1], self.modalities[mod2],
-                '' if mod_cmp == INTERNAL else '_' + self.modalities[mod_cmp],
-                metric)
+            self.modalities[mod1], self.modalities[mod2],
+            '' if mod_cmp == INTERNAL else '_' + self.modalities[mod_cmp],
+            metric)
 
     def _get_result(self, mod1, mod2, mod_cmp, metric_key):
         key = self._get_score_key(mod1, mod2, mod_cmp, metric_key)
@@ -259,11 +259,11 @@ class TwoModalitiesExperiment(MultimodalExperiment):
         table = " ".join(["{}" for _dummy in range(6)])
         print('-' * (width * 6 + 5))
         print('Modalities'.center(width * 3 + 2)
-            + 'Score: avg (std)'.center(width * 3 + 2))
+              + 'Score: avg (std)'.center(width * 3 + 2))
         print('-' * (width * 3 + 2) + ' ' + '-' * (width * 3 + 2))
-        print table.format(*[s.center(width)
-                            for s in ['Test', 'Reference', 'Comparison',
-                                      'KL', 'Euclidean', 'Cosine']])
+        print(table.format(*[s.center(width)
+                             for s in ['Test', 'Reference', 'Comparison',
+                                       'KL', 'Euclidean', 'Cosine']]))
         print(' '.join(['-' * width] * 6))
         for mod1, mod2 in [(0, 1), (1, 0)]:
             for mod_comp, mod_comp_str in ([(-1, 'internal')]
@@ -275,8 +275,8 @@ class TwoModalitiesExperiment(MultimodalExperiment):
                             % self._get_result(mod1, mod2,
                                                mod_comp, metr))
                            for metr in ['', '_frob', '_cosine']]
-                print table.format(*[s.center(width)
-                                     for s in (mod_str + res_str)])
+                print(table.format(*[s.center(width)
+                                     for s in (mod_str + res_str)]))
         print('-' * (width * 6 + 5))
 
 
@@ -305,13 +305,13 @@ class ThreeModalitiesExperiment(MultimodalExperiment):
                                     self.labels_ex, metric)
                 # Conpute score
                 self.logger.store_result(
-                        self._get_score_key(mods1, mods2, suffix),
-                        found_labels_to_score(test_labels, found))
+                    self._get_score_key(mods1, mods2, suffix),
+                    found_labels_to_score(test_labels, found))
 
     def _tested_combinations(self):
         combinations = []
         combinations += [([mod1], [mod2]) for mod1 in range(self.n_modalities)
-                    for mod2 in range(self.n_modalities) if mod1 != mod2]
+                         for mod2 in range(self.n_modalities) if mod1 != mod2]
         two_to_one = [([m for m in range(self.n_modalities) if m != mod],
                        [mod])
                       for mod in range(self.n_modalities)]
@@ -322,18 +322,18 @@ class ThreeModalitiesExperiment(MultimodalExperiment):
     def _get_all_internals(self, learner, data_set):
         internals = {}
         for mods, rest in self._tested_combinations():
-            if not mods in internals:
+            if mods not in internals:
                 internals[mods] = learner.reconstruct_internal_multi(
-                        [self.modalities[m] for m in mods],
-                        [data_set[m] for m in mods],
-                        self.iter_test)
+                    [self.modalities[m] for m in mods],
+                    [data_set[m] for m in mods],
+                    self.iter_test)
         return internals
 
     def _get_score_key(self, mods1, mods2, metric):
         return "score_{}2{}{}".format(
-                '_'.join([self.modalities[m] for m in mods1]),
-                '_'.join([self.modalities[m] for m in mods2]),
-                metric)
+            '_'.join([self.modalities[m] for m in mods1]),
+            '_'.join([self.modalities[m] for m in mods2]),
+            metric)
 
     def _get_result(self, mods1, mods2, metric_key):
         key = self._get_score_key(mods1, mods2, metric_key)
@@ -345,11 +345,11 @@ class ThreeModalitiesExperiment(MultimodalExperiment):
         table = " ".join(["{}" for _dummy in range(5)])
         print('-' * (width * 5 + 5))
         print('Modalities'.center(width * 2 + 2)
-            + 'Score: avg (std)'.center(width * 3 + 2))
+              + 'Score: avg (std)'.center(width * 3 + 2))
         print('-' * (width * 2 + 1) + ' ' + '-' * (width * 3 + 2))
-        print table.format(*[s.center(width)
-                            for s in ['Test', 'Reference',
-                                      'KL', 'Euclidean', 'Cosine']])
+        print(table.format(*[s.center(width)
+                             for s in ['Test', 'Reference',
+                                       'KL', 'Euclidean', 'Cosine']]))
         print(' '.join(['-' * width] * 5))
         for mods1, mods2 in self._tested_combinations():
             mod_str = [' & '.join(self.modalities[m]
@@ -357,9 +357,9 @@ class ThreeModalitiesExperiment(MultimodalExperiment):
                        ' & '.join(self.modalities[m]
                                   for m in mods2).center(width),
                        ]
-            res_str = [("%.3f (%.3f)"
-                        % self._get_result(mods1, mods2, metr))
-                        for metr in ['', '_frob', '_cosine']]
-            print table.format(*[s.center(width)
-                                    for s in (mod_str + res_str)])
+            res_str = ["{:.3f} ({:.3f})".format(
+                       self._get_result(mods1, mods2, metr))
+                       for metr in ['', '_frob', '_cosine']]
+            print(table.format(*[s.center(width)
+                                 for s in (mod_str + res_str)]))
         print('-' * (width * 5 + 5))
