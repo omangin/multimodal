@@ -154,10 +154,14 @@ class MultimodalExperiment(Experiment):
                                              x, self.iter_test)
                 for mod, x in enumerate(data_set)]
 
-    def serialize_parameters(self, destination):
+    def serialize_parameters(self):
         params = self._parameters_to_dict()
         params['loaders'] = [(l.dataset_name, l.serialize())
                              for l in self.loaders]
+        return params
+
+    def save_serialized_parameters(self, destination):
+        params = self.serialize_parameters()
         with open(destination, 'w+') as f:
             json.dump(params, f)
 
@@ -177,15 +181,21 @@ class MultimodalExperiment(Experiment):
         return cls.get_loader(conf)
 
     @classmethod
+    def from_serialized(cls, serialized):
+        loaders = {}
+        for m, (dataset, conf) in zip(serialized['modalities'],
+                                      serialized['loaders']):
+            loaders[m] = cls.get_loader(dataset, conf)
+        return cls(loaders, serialized['k'], serialized['iter_train'],
+                   serialized['iter_test'], coefs=serialized['coefs'],
+                   shuffle_labels=serialized['shuffle_labels'],
+                   run_mode=serialized['run_mode'], debug=serialized['debug'])
+
+    @classmethod
     def load_from_serialized(cls, path_to_serialized):
         with open(path_to_serialized, 'r+') as f:
             d = json.load(f)
-        loaders = {}
-        for m, (dataset, conf) in zip(d['modalities'], d['loaders']):
-            loaders[m] = cls.get_loader(dataset, conf)
-        return cls(loaders, d['k'], d['iter_train'], d['iter_test'],
-                   coefs=d['coefs'], shuffle_labels=d['shuffle_labels'],
-                   run_mode=d['run_mode'], debug=d['debug'])
+        return cls.from_serialized(d)
 
 
 class TwoModalitiesExperiment(MultimodalExperiment):
