@@ -207,7 +207,7 @@ def print_refreshed_stats():
 if ACTION == 'prepare':
     # Generate config files
     for (n, e), j in zip(exps, jobs):
-        e.serialize_parameters(j.config)
+        e.save_serialized_parameters(j.config)
 elif ACTION == 'run':
     pool.run()
     if LAUNCHER == 'process' or args.watch:
