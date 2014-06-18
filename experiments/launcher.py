@@ -128,7 +128,7 @@ jobs += [Job(WORKDIR, n, SCRIPT2) for n, e in exp_images]
 if LAUNCHER == 'process':
     pool = MultiprocessPool()
 elif LAUNCHER == 'torque':
-    pool = TorquePool(default_walltime=4.)
+    pool = TorquePool(default_walltime=240)
 pool.extend(jobs)
 
 
