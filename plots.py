@@ -143,8 +143,8 @@ def plot_boxes(loggers2, logger3):
     ax = plt.subplot(1, 2, 2, sharey=ax1)
     ax.label_outer()
     ax.spines['left'].set_visible(False)
-    polygons, labels = plot_boxes_one_exp_pairs(
-        logger3, logger3.get_value('modalities'), colors='pairs')
+    mods = logger3.get_value('modalities')
+    polygons, labels = plot_boxes_one_exp_pairs(logger3, mods, colors='pairs')
     legend(polygons, labels, fig=fig,  ncol=3, loc='lower center',
            bbox_to_anchor=(.45, .05))
     plt.title(', '.join(mods))
