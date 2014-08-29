@@ -97,7 +97,7 @@ def feature_file_name(year, speaker):
 def load_features(year, speaker, blacklist=False):
     check_year(year)
     check_speaker(year, speaker)
-    feat_file = os.path.join(feature_directory,
+    feat_file = os.path.join(CONFIG['feat_dir'],
                              feature_file_name(year, speaker))
 
     Xsound = loadmat(feat_file)['hac']
