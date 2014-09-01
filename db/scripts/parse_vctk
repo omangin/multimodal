@@ -1,0 +1,22 @@
+#!/usr/bin/env python2
+
+
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(__file__, '../../../..')))
+
+from multimodal.db.vctk import (VCTKDB,
+                                default_vctk_dir,
+                                DEFAULT_VCTK_FILE)
+
+
+if len(sys.argv) > 1:
+    out_path = sys.argv[1]
+else:
+    out_path = default_vctk_dir()
+
+out_file = os.path.join(out_path, DEFAULT_VCTK_FILE)
+db = VCTKDB()
+db.from_db_root(default_vctk_dir())
+db.write_json(out_file)
+print('Saved to description file: %s.' % out_file)
