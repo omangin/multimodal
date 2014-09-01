@@ -1,6 +1,6 @@
 import os
 
-from .sound import Record, DataBase, XML_DIR, WAV_EXT, dom
+from .sound import Record, DataBase, dom
 
 
 def check_year(year):
@@ -27,6 +27,10 @@ def _get_tag_node_name(year):
 
 class AcornsDB(DataBase):
 
+    XML_DIR = 'XML'
+    WAV_DIR = 'WAV'
+    WAV_EXT = '.wav'
+
     def __init__(self):
         DataBase.__init__(self)
 
@@ -38,28 +42,32 @@ class AcornsDB(DataBase):
         root = os.path.abspath(root)
         tag_node_name = _get_tag_node_name(year)
         self.root = root
-        self.spkrs = self.get_speakers(year)
-        for (spk_id, spk) in enumerate(self.spkrs):
+        for s in self.get_speakers(year):
+            spk_id = self.add_speaker(s)
             # Parse files and populate records
-            self.records.append([])
-            spk_root = os.path.join(self.root, XML_DIR, spk)
+            spk_root = os.path.join(self.root, self.XML_DIR, s)
             for xml_file in _get_XML_files_in(spk_root):
-                rec = self._parse_record(spk_id, spk, xml_file, tag_node_name)
-                self.records[-1].append(rec)
+                rec = self._parse_record(spk_id, s, xml_file, tag_node_name)
+                self.add_record(rec)
+        self.sort()
 
     def _parse_record(self, speaker_id, speaker, xml_file, tag_node_name):
-        parsed = dom.parse(os.path.join(self.root, XML_DIR, speaker, xml_file))
+        parsed = dom.parse(os.path.join(self.root, self.XML_DIR, speaker,
+                                        xml_file))
         # Ignore other than first utterance
         utt = parsed.getElementsByTagName('utterance')[0]
         style = utt.getElementsByTagName('style')[0].getAttribute('value')
-        audio = utt.getElementsByTagName('audio-file'
-                )[0].getAttribute('value') + WAV_EXT
-        tag_names = utt.getElementsByTagName(tag_node_name
-                )[0].childNodes[0].data
+        audio = utt.getElementsByTagName(
+            'audio-file'
+            )[0].getAttribute('value') + self.WAV_EXT
+        tag_names = utt.getElementsByTagName(
+            tag_node_name
+            )[0].childNodes[0].data
         tags = [self.get_tag_add(tn)
                 for tn in tag_names.split()]
-        trans = utt.getElementsByTagName('trans'
-                )[0].childNodes[2].data.strip()
+        trans = utt.getElementsByTagName(
+            'trans'
+            )[0].childNodes[2].data.strip()
         return Record(self, speaker_id, audio, tags, trans, style)
 
     @classmethod
