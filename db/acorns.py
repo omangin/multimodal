@@ -28,7 +28,7 @@ def default_acorns_dir():
 
 
 def default_acorns_file(year):
-    return os.path.join("Acorns_Y%d.xml" % year)
+    return os.path.join("Acorns_Y%d.json" % year)
 
 
 def check_speaker(year, speaker):

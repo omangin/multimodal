@@ -6,12 +6,7 @@ __date__ = '10/2011'
 
 
 import os
-import xml.dom.minidom as dom
-
-
-XML_DIR = 'XML'
-WAV_DIR = 'WAV'
-WAV_EXT = '.wav'
+import json
 
 
 def get_text_node(dom, el_name, accept_empty=False):
@@ -28,7 +23,7 @@ def get_text_node(dom, el_name, accept_empty=False):
 class Record:
 
     def __init__(self, db, speaker, audio, tags,
-            transcription, style):
+                 transcription, style):
         self.db = db
         self.spkr_id = speaker
         self.audio = audio  # Name of audio file
@@ -52,11 +47,11 @@ class Record:
 
     def __str__(self):
         return "<\"{}\", {}, tags: {} ({})>".format(
-                self.trans,
-                self.audio,
-                [self.db.tags[t] for t in self.tags],
-                self.db.spkrs[self.spkr_id],
-                )
+            self.trans,
+            self.audio,
+            [self.db.tags[t] for t in self.tags],
+            self.db.spkrs[self.spkr_id],
+            )
 
     def __repr__(self):
         return self.__str__()
@@ -65,8 +60,14 @@ class Record:
         return [self.db.tags[i] for i in self.tags]
 
     def get_audio_path(self):
-        return os.path.join(self.db.root, WAV_DIR,
-                self.db.spkrs[self.spkr_id], self.audio)
+        return os.path.join(self.db.get_wav_dir(self.spkr_id), self.audio)
+
+    def to_dict(self):
+        return {'audio_file': self.audio,
+                'tags': self.get_tag_names(),
+                'transcription': self.trans,
+                'style': self.style,
+                }
 
     def getDom(self, doc):
         rd = doc.createElement('record')
@@ -86,8 +87,16 @@ class Record:
             rd.appendChild(tag)
         return rd
 
+    @classmethod
+    def from_dict(cls, db, speaker_id, d):
+        return cls(db, speaker_id, d.get('audio_file', None),
+                   [db.get_tag_add(t) for t in d.get('tags', [])],
+                   d.get('transcription', None), d.get('style', None))
+
 
 class DataBase:
+
+    WAV_DIR = ''  # Directory for wav files
 
     def __init__(self):
         # Init record list, organized by speaker
@@ -99,6 +108,7 @@ class DataBase:
         self.tag_id = {}
         self.root = None
         self.spkrs = []
+        self.spkrs_info = []
 
     def has_tag(self, tag):
         return tag in self.tag_id
@@ -124,67 +134,47 @@ class DataBase:
         for r in self.records:
             r.sort()
 
-    def todom(self):
-        doc = dom.Document()
-        db = doc.createElement('database')
-        # Add root description
-        root = doc.createElement('root')
-        root.appendChild(doc.createTextNode(self.root))
-        db.appendChild(root)
-        # Add tag declarations
-        for tagname in self.tags:
-            tag = doc.createElement('tag_def')
-            tag.setAttribute('name', tagname)
-            db.appendChild(tag)
-        # Add speaker descriptions and records
-        for (spkr, recs) in zip(self.spkrs, self.records):
-            s = doc.createElement('speaker')
-            s.setAttribute('dir', str(spkr))
-            for r in recs:
-                s.appendChild(r.getDom(doc))
-            db.appendChild(s)
-        doc.appendChild(db)
-        return doc
+    def get_wav_dir(self, speaker_id):
+        return os.path.join(self.root, self.WAV_DIR,
+                            self.spkrs[self.spkr_id])
 
-    def write_xml(self, filename):
+    def write_json(self, filename):
+        data = {'root': self.root,
+                'tags': self.tags,
+                'speakers': []
+                }
+        for speaker, info, records in zip(self.spkrs, self.spkrs_info,
+                                          self.records):
+            speaker_records = [r.to_dict() for r in records]
+            data['speakers'].append({
+                'name': speaker,
+                'info': info,
+                'records': speaker_records,
+                })
         with open(filename, 'w') as f:
-            f.write(self.todom().toprettyxml(indent='    '))
+            json.dump(data, f, indent=2)
 
     def load_from(self, filename, sort=True):
-        parsed = dom.parse(filename)
-        db = parsed.getElementsByTagName('database')[0]
-        new_root = get_text_node(db, 'root')
-        if self.root is not None and self.root != new_root:
-            raise ValueError(
-                    "Can't load records from a DB with a different root.")
-        else:
-            self.root = new_root
-        # Get tags
-        tags = db.getElementsByTagName('tag_def')
-        for tag in tags:
-            self.add_tag(tag.getAttribute('name'))
-        # Get speakers
-        speakers = db.getElementsByTagName('speaker')
-        for speaker in speakers:
-            spk_id = len(self.spkrs)
-            self.spkrs.append(speaker.getAttribute('dir'))
-            self.records.append([])
-            # Get records
-            records = speaker.getElementsByTagName('record')
-            for rec in records:
-                style = rec.getAttribute('style')
-                audio = get_text_node(rec, 'audio')
-                tags = [self.tag_id[t.getAttribute('name')]
-                        for t in rec.getElementsByTagName('tag')]
-                trans = get_text_node(rec, 'trans', accept_empty=True)
-                r = Record(self, spk_id, audio, tags, trans, style)
+        with open(filename, 'r') as f:
+            data = json.load(f)
+        self.root = data['root']
+        for t in data.get('tags', []):
+            self.add_tag(t)
+        for s in data['speakers']:
+            spk_id = self.add_speaker(s['name'], s.get('info', None))
+            for r in s['records']:
+                r = Record.from_dict(self, spk_id, r)
                 self.records[-1].append(r)
         if sort:
             self.sort()
 
-    def add_speaker(self, name):
+    def add_speaker(self, name, info=None):
+        if name in self.spkrs:
+            raise ValueError('There is already a speaker with the same name.')
         self.records.append([])
         self.spkrs.append(name)
+        self.spkrs_info.append(info)
+        return len(self.spkrs) - 1
 
     def add_record(self, record):
         if record.db is not self:
@@ -218,10 +208,10 @@ class DataBase:
                 yield r
 
     def statistics(self, display=True):
-        print "======================="
-        print "* Database statistics *"
-        print "======================="
-        print self.__str__()
+        print("=======================")
+        print("* Database statistics *")
+        print("=======================")
+        print(self.__str__())
         print("Records by speaker: %s" % ", ".join(map(len, self.records)))
         counts = [0 for _ in self.tags]
         for r in self.all_records():

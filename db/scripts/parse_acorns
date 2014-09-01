@@ -23,5 +23,5 @@ for year in [1, 2]:
                                           'ACORNS-English-Corpora-ev01/'
                                           "ACORNS-Y%d-ENG" % year),
                              year)
-    orig_db.write_xml(out_file)
+    orig_db.write_json(out_file)
     print('Saved year %d to description file: %s.' % (year, out_file))
