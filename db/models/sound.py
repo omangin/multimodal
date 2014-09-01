@@ -9,17 +9,6 @@ import os
 import json
 
 
-def get_text_node(dom, el_name, accept_empty=False):
-    txt_node = dom.getElementsByTagName(el_name)[0].childNodes
-    if len(txt_node) > 0:
-        txt = txt_node[0].data.strip()
-    elif accept_empty:
-        txt = ''
-    else:
-        raise ValueError("Empty text node (%s)." % txt_node)
-    return txt
-
-
 class Record:
 
     def __init__(self, db, speaker, audio, tags,
@@ -136,7 +125,7 @@ class DataBase:
 
     def get_wav_dir(self, speaker_id):
         return os.path.join(self.root, self.WAV_DIR,
-                            self.spkrs[self.spkr_id])
+                            self.spkrs[speaker_id])
 
     def write_json(self, filename):
         data = {'root': self.root,

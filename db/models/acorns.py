@@ -1,6 +1,7 @@
 import os
+import xml.dom.minidom as dom
 
-from .sound import Record, DataBase, dom
+from .sound import Record, DataBase
 
 
 def check_year(year):
