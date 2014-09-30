@@ -39,6 +39,15 @@ if len(sys.argv) > 1 and sys.argv[1] == '--debug':
 exp = TwoModalitiesExperiment({'objects': ObjectsLoader(['SURF', 'color']),
                                'sound': AcornsLoader(1)},
                               50, 50, 50, debug=DEBUG, run_mode='single')
+
+if len(sys.argv) > 1:
+    path = ''
+    if len(sys.argv) > 2:
+        path = os.path.expanduser(sys.argv[2])
+    path = os.path.join(os.getcwd(), path)
+    exp.set_out_path_and_name(path, sys.argv[1])
+
+
 exp.run()
 exp.print_result_table()
 
