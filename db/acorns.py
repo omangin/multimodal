@@ -5,7 +5,7 @@ __author__ = 'Olivier Mangin <olivier.mangin@inria.fr>'
 __date__ = '08/2012'
 
 
-"""ACORNS  CAREGIVER database.
+"""ACORNS CAREGIVER database.
 """
 
 
@@ -14,6 +14,7 @@ import os
 from scipy.io import loadmat
 
 from ..local import CONFIG
+from ..features.hac import build_codebooks_from_list_of_wav
 from .models.loader import Loader
 from .models.acorns import AcornsDB, check_year
 
@@ -109,3 +110,12 @@ def load_features(year, speaker, blacklist=False):
         Xsound = Xsound[all_records, :]
 
     return Xsound
+
+
+def build_acorns_codebook(ks):
+    all_records = []
+    for year in [1, 2]:
+        db = load(year)
+        all_records.extend(sum(db.records, []))
+    return build_codebooks_from_list_of_wav(
+        [r.get_audio_path() for r in all_records], ks)

@@ -18,6 +18,7 @@ Note:
 import os
 
 from ..local import CONFIG
+from ..features.hac import build_codebooks_from_list_of_wav
 from .models.vctk import VCTKDB
 
 
@@ -35,3 +36,9 @@ def load(db_file=None, blacklist=False):
     db = VCTKDB()
     db.load_from(db_file)
     return db
+
+
+def build_vctk_codebook(ks):
+    db = load()
+    return build_codebooks_from_list_of_wav(
+        [r.get_audio_path() for r in db.all_records()], ks)

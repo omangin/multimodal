@@ -10,18 +10,14 @@ import os
 from scipy.io import savemat
 
 from multimodal.local import CONFIG
-from multimodal.db.vctk import load
-from multimodal.features.hac import (build_codebooks_from_list_of_wav,
-                                     MFCC_PARAMS)
+from multimodal.db.vctk import build_vctk_codebook
+from multimodal.features.hac import MFCC_PARAMS
 
 
 CODEBOOK_PATH = os.path.join(CONFIG['feat-dir'], "vctk_codebook.mat")
 KS = [150, 150, 100]
 
 
-db = load()
-codebooks = build_codebooks_from_list_of_wav(
-    [r.get_audio_path() for r in db.all_records()],
-    KS)
+codebooks = build_vctk_codebook(KS)
 savemat(CODEBOOK_PATH, {'codebooks': codebooks,
                         'mfcc_params': MFCC_PARAMS})
