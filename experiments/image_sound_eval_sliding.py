@@ -9,8 +9,6 @@ Additionaly the recognition of labels along the sentences is evaluated.
 
 import os
 import sys
-import signal
-import subprocess
 from shutil import rmtree
 from tempfile import mkdtemp
 from multiprocessing import Pool
@@ -22,10 +20,15 @@ from multimodal.experiment import TwoModalitiesExperiment
 from multimodal.db.objects import ObjectsLoader
 from multimodal.db.acorns import Year1Loader as AcornsLoader
 from multimodal.lib.window import (concat_from_list_of_wavs, BasicTimeWindow,
-                                   ConcatTimeWindow, slider, save_wav)
+                                   ConcatTimeWindow, slider)
 from multimodal.learner import MultimodalLearner
 from multimodal.lib.metrics import cosine_diff
 from multimodal.evaluation import classify_NN
+from multimodal.features.hac import hac
+from multimodal.local import CONFIG
+
+
+CODEBOOK_PATH = os.path.join(CONFIG['feat-dir'], "vctk_codebook.mat")
 
 
 DEBUG = False
@@ -77,29 +80,20 @@ sliding_wins = [test_sound_wins.get_subwindow(ts, te)
                 ]
 
 
-def process_win((i, w)):
-    dest_root = os.path.join(TMPDIR, str(i))
-    wavfile = dest_root + '.wav'
-    matfile = dest_root + '.mat'
-    save_wav(wavfile, w)
-    subprocess.check_call([
-        'python2',
-        '/home/omangin/work/code/wav2hac/fake_wav2hac_mat.py',
-        wavfile,
-        matfile,
-        ])
-    os.remove(wavfile)
-    hac = loadmat(matfile)['hac']
-    os.remove(matfile)
-    return hac
+codebooks = loadmat(CODEBOOK_PATH)['codebooks'].flatten().tolist()
 
+
+def process_win(w):
+    array_w = w.to_array_window()
+    win_hac = hac(array_w.array, array_w.rate, codebooks)
+    return sp.csc_matrix(win_hac)
 
 # Create tmp dir
 TMPDIR = mkdtemp()
 pool = Pool()
 print('Processing {} windows... (using {} processes).'.format(
     len(sliding_wins), pool._processes))
-vectors = pool.map(process_win, enumerate(sliding_wins))
+vectors = pool.map(process_win, sliding_wins)
 print('Finished.')
 # Cleanup
 rmtree(TMPDIR)
