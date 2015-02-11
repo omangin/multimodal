@@ -76,6 +76,9 @@ class TimeWindow(object):
     def absolute_to_relative_time(self, t):
         return t - self.absolute_start
 
+    def mean_time(self):
+        return .5 * (self.absolute_end + self.absolute_start)
+
     def move(self, delta_t):
         self.absolute_start += delta_t
         self.absolute_end += delta_t

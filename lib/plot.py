@@ -23,8 +23,21 @@ NavyBlue = '#006EB8'
 Red = '#ED1B23'
 
 
+def _cmap_from_data(x):
+    """Default cmap depending on values (all nonnegative, nonpositive,
+       or neither).
+    """
+    if np.alltrue(x >= 0):
+        cmap = plt.cm.Reds
+    elif np.alltrue(x <= 0):
+        cmap = plt.cm.Blues
+    else:
+        cmap = plt.cm.Blues_r
+    return cmap
+
+
 def plot(*args, **kwargs):
-    ax = kwargs.pop('ax', plt.gca())
+    ax = kwargs.pop('ax', None) or plt.gca()
     if 'linewidth' not in kwargs:
         kwargs['linewidth'] = 0.75
     lines = ax.plot(*args, **kwargs)
@@ -38,7 +51,7 @@ def legend(*args, **kwargs):
        If None is given, current axe is used. If both are set, ax is used.
     """
     facecolor = colorConverter.to_rgba('white', alpha=.8)
-    ax_or_fig = kwargs.pop('ax', kwargs.pop('fig', plt.gca()))
+    ax_or_fig = kwargs.pop('ax', kwargs.pop('fig', None)) or plt.gca()
     if 'loc' not in kwargs:
         kwargs['loc'] = 'best'
     legend = ax_or_fig.legend(*args, frameon=True, scatterpoints=1, **kwargs)
@@ -59,7 +72,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     @param x: optional abscisse
     @param var_style: 'fill' (default) | 'bar'
     """
-    ax = kwargs.pop('ax', plt.gca())
+    ax = kwargs.pop('ax', None) or plt.gca()
     mean = np.mean(y, axis=1)
     std = np.std(y, axis=1)
     if x is None:
@@ -81,7 +94,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     return lines
 
 
-def boxplot(x, ax=None, **kwargs):
+def boxplot(x, **kwargs):
     """
     Create a box-and-whisker plot showing the mean, 25th percentile, and 75th
     percentile. The difference from matplotlib is only the left axis line is
@@ -93,8 +106,7 @@ def boxplot(x, ax=None, **kwargs):
         [] for no labels.
     @return:
     """
-    if ax is None:
-        ax = plt.gca()
+    ax = kwargs.pop('ax', None) or plt.gca()
     # If no ticklabels are specified, don't draw any
     xticklabels = kwargs.pop('xticklabels', None)
 
@@ -115,6 +127,24 @@ def boxplot(x, ax=None, **kwargs):
     plt.setp(bp['caps'], color=NavyBlue, linewidth=linewidth)
     ax.spines['left']._linewidth = 0.5
     return bp
+
+
+def pcolormesh(x, **kwargs):
+    ax = kwargs.pop('ax', None) or plt.gca()
+    if 'cmap' not in kwargs:
+        kwargs['cmap'] = _cmap_from_data(x)
+    xticklabels = kwargs.pop('xticklabels', None)
+    yticklabels = kwargs.pop('yticklabels', None)
+    # Plot
+    p = ax.pcolormesh(x, **kwargs)
+    # Set ticks
+    if xticklabels:
+        ax.set_xticks(np.arange(0.5, x.shape[1] + 0.5))
+        ax.set_xticklabels(xticklabels)
+    if yticklabels:
+        ax.set_yticks(np.arange(0.5, x.shape[0] + 0.5))
+        ax.set_yticklabels(yticklabels)
+    return p
 
 
 def remove_chartjunk(ax, spines, grid=None, ticklabels=None):
