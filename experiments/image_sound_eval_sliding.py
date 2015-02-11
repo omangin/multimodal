@@ -23,7 +23,7 @@ from multimodal.lib.window import (concat_from_list_of_wavs, BasicTimeWindow,
                                    ConcatTimeWindow, slider)
 from multimodal.learner import MultimodalLearner
 from multimodal.lib.metrics import cosine_diff
-from multimodal.evaluation import classify_NN
+from multimodal.evaluation import all_distances
 from multimodal.features.hac import hac
 from multimodal.local import CONFIG
 
@@ -47,7 +47,7 @@ if len(sys.argv) > 1:
     path = os.path.join(os.getcwd(), path)
     exp.set_out_path_and_name(path, sys.argv[1])
 
-
+# Regular run
 exp.run()
 exp.print_result_table()
 
@@ -59,15 +59,17 @@ sound_modality = exp.modalities.index('sound')
 objects_modality = exp.modalities.index('objects')
 
 # Perform additional evaluation
-test_idx = exp.logger.get_last_value('test')
+test_idx = exp.logger.get_last_value('test')  # TODO this is unused, FIX
+# WARNING: currently the code computes associations for train & test examples
 test_labels = [exp.labels[t] for t in test_idx]
-assoc_idx = exp.logger.get_value('sample-pairing')
+assoc_idx = exp.logger.get_value('sample_pairing')
 if DEBUG:
     test_idx = test_idx[:10]
     test_labels = test_labels[:10]
     assoc_idx = assoc_idx[:10]
 sound_loader = exp.loaders[sound_modality]
 
+# Will compute matching windows for all wavs
 test_wavs = [sound_loader.records[i[sound_modality]].get_audio_path()
              for i in assoc_idx]
 print('Building time windows from wav files...')
@@ -121,9 +123,9 @@ ex_coefs_objects = learner.reconstruct_internal(
     'objects', exp.data_ex[objects_modality], exp.iter_test)
 
 # Perform recognition
-distances = classify_NN(test_coefs_sound, ex_coefs_objects, exp.labels_ex,
-                        cosine_diff)
+distances = all_distances(test_coefs_sound, ex_coefs_objects, cosine_diff)
 exp.logger.store('sliding_distances', distances)
+exp.logger.store('label_ex', exp.labels_ex)
 try:
     exp.logger.save()
 except exp.logger.NoFileError:

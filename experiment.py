@@ -77,8 +77,8 @@ class MultimodalExperiment(Experiment):
         self.labels_all = labels
         self.data = [x[[idx[i] for idx in assoc_idx], :]
                      for i, x in enumerate(raw_data)]
-        self.logger.store_global('label-pairing', self.label_association)
-        self.logger.store_global('sample-pairing', assoc_idx)
+        self.logger.store_global('label_pairing', self.label_association)
+        self.logger.store_global('sample_pairing', assoc_idx)
         if self.debug:  # Reduce size of data for quick execution
             self.logger.log(
                 'WARNING: Debug mode active, using subset of the database')
