@@ -16,6 +16,7 @@ from multimodal.experiment import (TwoModalitiesExperiment,
 from multimodal.db.choreo2 import Choreo2Loader
 from multimodal.db.acorns import Year1Loader as AcornsLoader
 from multimodal.db.objects import ObjectsLoader
+from multimodal.lib.logger import Logger
 
 
 parser = argparse.ArgumentParser()
@@ -130,9 +131,6 @@ MOD_PAIRS = [('motion', 'sound'),
              ('image', 'sound')]
 EXPS_BY_NAME = dict(exps)
 JOBS_BY_NAME = dict({j.name: j for j in jobs})
-
-
-from multimodal.lib.logger import Logger
 
 
 def collect_results():

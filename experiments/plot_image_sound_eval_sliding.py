@@ -1,14 +1,16 @@
 import os
 
 import numpy as np
+import matplotlib as plt
 
 from multimodal.lib.metrics import mutual_information
 from multimodal.lib.logger import Logger
-from multimodal.lib.plot import plot, pcolormesh, legend
+from multimodal.lib.plot import pcolormesh
 from multimodal.lib.window import (BasicTimeWindow, ConcatTimeWindow,
-                                   TimeOutOfBound, concat_from_list_of_wavs,
+                                   concat_from_list_of_wavs,
                                    slider)
 from multimodal.db.acorns import Year1Loader as AcornsLoader
+from multimodal.plots import InteractivePlot, plot_one_sentence
 
 
 WIDTH = .5
@@ -46,142 +48,6 @@ sliding_wins = [test_sound_wins.get_subwindow(ts, te)
 similarities = -logger.get_last_value('sliding_distances')
 sound_labels = logger.get_value('label_pairing')[sound_modality]
 
-from matplotlib.widgets import Slider
-import matplotlib.pyplot as plt
-
-
-# TODO: use fact that windows are sorted to opimize filter
-class ScorePlot(object):
-
-    def __init__(self, record_wins, sliding_wins, sound_labels, similarities,
-                 draw_sentence_boundaries=True, use_relative_time=False):
-        self.current = BasicTimeWindow(0., 20.)
-        self.records = record_wins  # ConcatTimeWindow
-        self.sliding = sliding_wins  # List
-        self.sound_labels = sound_labels
-        self.similarity = [BasicTimeWindow(w.absolute_start, w.absolute_end,
-                                           similarities[i, :])
-                           for i, w in enumerate(self.sliding)]
-        self.fig, self.main_ax = plt.subplots()
-        self.draw_sentence_boundaries = draw_sentence_boundaries
-        self.use_relative_time = use_relative_time
-
-    def subwindows(self, win):
-        return win.get_subwindow(self.current.absolute_start,
-                                 self.current.absolute_end).windows
-
-    def time_in_current(self, time):
-        try:
-            self.current.check_time(time)
-            return True
-        except TimeOutOfBound:
-            return False
-
-    def filter_windows(self, windows):
-        # Not optimal knowing that windows are sorted...
-        return [w for w in windows if self.time_in_current(w.mean_time())]
-
-    def relative_time(self, time):
-        """Return relative or absolute time depending on setup.
-        """
-        if self.use_relative_time:
-            return time - self.current.absolute_start
-        else:
-            return time
-
-    def relative(self, time, window):
-        if time == 'start':
-            t = window.absolute_start
-        elif time == 'end':
-            t = window.absolute_end
-        elif time == 'mean':
-            t = window.mean_time()
-        else:
-            raise ValueError()
-        return self.relative_time(t)
-
-    def draw(self):
-        filtered_windows = self.filter_windows(self.sliding)
-        times = [self.relative('mean', w) for w in filtered_windows]
-        win_boundaries = [(max(self.relative('start', w),
-                               self.relative('start', self.current)),
-                           min(self.relative('end', w),
-                               self.relative('end', self.current)))
-                          for w in filtered_windows]
-        similarities = np.array(
-                [w.obj for w in self.filter_windows(self.similarity)])
-        # Clean and Plot
-        self.main_ax.cla()
-        # Plot window boundaries
-        for (t, s) in zip(win_boundaries, similarities):
-            y = max(s)
-            self.main_ax.plot(t, (y, y), color='white', linewidth=2)
-        # Plot scores
-        plots = plot(times, similarities,
-                     linestyle='-', marker='o', ax=self.main_ax)
-        # Plot sentence text and boundaries
-        for w in self.subwindows(self.records):
-            self.main_ax.text(
-                self.relative('mean', w), -.05, w.obj.trans,
-                horizontalalignment='center',
-                fontdict={'color': 'black' if w.obj in test_records
-                          else 'gray'})
-            if self.draw_sentence_boundaries:
-                self.main_ax.axvline(x=self.relative('end', w),
-                                     linewidth=2, linestyle='-', color='gray')
-        legend(plots,
-               [sound_labels[i] for i in logger.get_last_value('label_ex')],
-               ax=self.main_ax)
-        self.main_ax.set_xbound(self.relative('start', self.current),
-                                self.relative('end', self.current))
-        self.fig.canvas.draw_idle()
-
-
-class InteractivePlot(object):
-
-    def __init__(self, record_wins, sliding_wins, sound_labels, similarities):
-        self.score_plot = ScorePlot(record_wins, sliding_wins, sound_labels,
-                                    similarities)
-        self.fig, self.main_ax = self.score_plot.fig, self.score_plot.main_ax
-        plt.subplots_adjust(bottom=0.2)
-        self.score_plot.draw()
-        max_time = self.score_plot.records.absolute_end
-        ax_s = plt.axes([0.15, 0.1, 0.75, 0.03])
-        ax_w = plt.axes([0.15, 0.05, 0.75, 0.03])
-        self.slider_start = Slider(ax_s, 'Start', 0., max_time, valinit=0.)
-        self.slider_start.on_changed(self.update)
-        self.slider_width = Slider(ax_w, 'Width', 0., 30., valinit=15.)
-        self.slider_width.on_changed(self.update)
-        self.fig.canvas.mpl_connect('key_press_event', self.on_key)
-
-    def update(self, val):
-        self.score_plot.current.absolute_start = self.slider_start.val
-        width = self.slider_width.val
-        self.score_plot.current.absolute_end = (
-                self.score_plot.current.absolute_start + width)
-        self.score_plot.draw()
-
-    def on_key(self, event):
-        if event.key == 'right':
-            direction = 1
-        elif event.key == 'left':
-            direction = -1
-        else:
-            return
-        self.slider_start.set_val(self.slider_start.val
-                                  + direction * .5 * self.slider_width.val)
-        self.update(None)
-
-
-def plot_one_sentence(record_win, sliding_wins, sound_labels, similarities):
-    score_plot = ScorePlot(ConcatTimeWindow([record_win]), sliding_wins,
-                           sound_labels, similarities,
-                           draw_sentence_boundaries=False,
-                           use_relative_time=True)
-    score_plot.current.absolute_start = record_win.absolute_start
-    score_plot.current.absolute_end = record_win.absolute_end
-    score_plot.draw()
-
 
 def word_histo_by_label(records, labels):
     assert(len(records) == len(labels))
@@ -217,18 +83,21 @@ for i in range(len(all_words)):
 
 plt.interactive(True)
 plt.style.use('ggplot')
-myplot = InteractivePlot(record_wins, sliding_wins, sound_labels, similarities)
+example_labels = [sound_labels[i] for i in logger.get_last_value('label_ex')]
+myplot = InteractivePlot(record_wins, sliding_wins, similarities,
+                         example_labels)
+myplot.is_test = lambda r: r in test_records
 
 test_record_wins = [w for w in record_wins.windows if w.obj in test_records]
 for r in test_record_wins[:10]:
-    plot_one_sentence(r, sliding_wins, sound_labels, similarities)
+    plot_one_sentence(r, sliding_wins, similarities, example_labels)
 
-plt.figure()
+plt.pyplot.figure()
 #most_info = np.nonzero(np.max(word_label_info, axis=1) > .04)[0]
 #p = pcolormesh(word_label_info[most_info, :],
 #               xticklabels=all_labels,
 #               yticklabels=[all_words[i] for i in most_info])
 p = pcolormesh(word_label_info, xticklabels=all_labels, yticklabels=all_words)
-plt.colorbar(p)
+plt.pyplot.colorbar(p)
 
 #plot_one_sentence(record_wins[0], sliding_wins, sound_labels, similarities)
