@@ -53,9 +53,8 @@ import matplotlib.pyplot as plt
 # TODO: use fact that windows are sorted to opimize filter
 class ScorePlot(object):
 
-    draw_sentence_boundaries = True
-
-    def __init__(self, record_wins, sliding_wins, sound_labels, similarities):
+    def __init__(self, record_wins, sliding_wins, sound_labels, similarities,
+                 draw_sentence_boundaries=True, use_relative_time=False):
         self.current = BasicTimeWindow(0., 20.)
         self.records = record_wins  # ConcatTimeWindow
         self.sliding = sliding_wins  # List
@@ -64,6 +63,8 @@ class ScorePlot(object):
                                            similarities[i, :])
                            for i, w in enumerate(self.sliding)]
         self.fig, self.main_ax = plt.subplots()
+        self.draw_sentence_boundaries = draw_sentence_boundaries
+        self.use_relative_time = use_relative_time
 
     def subwindows(self, win):
         return win.get_subwindow(self.current.absolute_start,
@@ -80,11 +81,32 @@ class ScorePlot(object):
         # Not optimal knowing that windows are sorted...
         return [w for w in windows if self.time_in_current(w.mean_time())]
 
+    def relative_time(self, time):
+        """Return relative or absolute time depending on setup.
+        """
+        if self.use_relative_time:
+            return time - self.current.absolute_start
+        else:
+            return time
+
+    def relative(self, time, window):
+        if time == 'start':
+            t = window.absolute_start
+        elif time == 'end':
+            t = window.absolute_end
+        elif time == 'mean':
+            t = window.mean_time()
+        else:
+            raise ValueError()
+        return self.relative_time(t)
+
     def draw(self):
         filtered_windows = self.filter_windows(self.sliding)
-        times = [w.mean_time() for w in filtered_windows]
-        win_boundaries = [(max(w.absolute_start, self.current.absolute_start),
-                           min(w.absolute_end, self.current.absolute_end))
+        times = [self.relative('mean', w) for w in filtered_windows]
+        win_boundaries = [(max(self.relative('start', w),
+                               self.relative('start', self.current)),
+                           min(self.relative('end', w),
+                               self.relative('end', self.current)))
                           for w in filtered_windows]
         similarities = np.array(
                 [w.obj for w in self.filter_windows(self.similarity)])
@@ -100,18 +122,18 @@ class ScorePlot(object):
         # Plot sentence text and boundaries
         for w in self.subwindows(self.records):
             self.main_ax.text(
-                w.mean_time(), -.05, w.obj.trans,
+                self.relative('mean', w), -.05, w.obj.trans,
                 horizontalalignment='center',
                 fontdict={'color': 'black' if w.obj in test_records
                           else 'gray'})
             if self.draw_sentence_boundaries:
-                self.main_ax.axvline(x=w.absolute_end, linewidth=2,
-                                     linestyle='-', color='gray')
+                self.main_ax.axvline(x=self.relative('end', w),
+                                     linewidth=2, linestyle='-', color='gray')
         legend(plots,
                [sound_labels[i] for i in logger.get_last_value('label_ex')],
                ax=self.main_ax)
-        self.main_ax.set_xbound(self.current.absolute_start,
-                                self.current.absolute_end)
+        self.main_ax.set_xbound(self.relative('start', self.current),
+                                self.relative('end', self.current))
         self.fig.canvas.draw_idle()
 
 
@@ -153,8 +175,9 @@ class InteractivePlot(object):
 
 def plot_one_sentence(record_win, sliding_wins, sound_labels, similarities):
     score_plot = ScorePlot(ConcatTimeWindow([record_win]), sliding_wins,
-                           sound_labels, similarities)
-    score_plot.draw_sentence_boundaries = False
+                           sound_labels, similarities,
+                           draw_sentence_boundaries=False,
+                           use_relative_time=True)
     score_plot.current.absolute_start = record_win.absolute_start
     score_plot.current.absolute_end = record_win.absolute_end
     score_plot.draw()
@@ -185,8 +208,11 @@ h, p_labels, all_labels, all_words = word_histo_by_label(
 word_label_info = np.zeros(h.shape)
 for i in range(len(all_words)):
     for j in range(len(all_labels)):
-        hist = [[h[i, j], sum(h[i, :j]) + sum(h[i, (j + 1):])],
-                [p_labels[j] - h[i, j], sum(p_labels - h[i, :]) - p_labels[j] + h[i, j]]]
+        hist = [[h[i, j],
+                 sum(h[i, :j]) + sum(h[i, (j + 1):])],
+                [p_labels[j] - h[i, j],
+                 sum(p_labels - h[i, :]) - p_labels[j] + h[i, j]],
+                ]
         word_label_info[i, j] = mutual_information(np.array(hist))
 
 plt.interactive(True)
