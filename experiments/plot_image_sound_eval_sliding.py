@@ -85,8 +85,7 @@ plt.interactive(True)
 plt.style.use('ggplot')
 example_labels = [sound_labels[i] for i in logger.get_last_value('label_ex')]
 myplot = InteractivePlot(record_wins, sliding_wins, similarities,
-                         example_labels)
-myplot.is_test = lambda r: r in test_records
+                         example_labels, is_test=lambda r: r in test_records)
 
 # Prepare for plotting sentence results in files
 DESTDIR = os.path.join(WORKDIR, 'sliding_win_plots')

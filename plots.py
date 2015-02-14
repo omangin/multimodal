@@ -199,7 +199,7 @@ class ScorePlot(object):
             }
 
     def __init__(self, record_wins, sliding_wins, similarities, example_labels,
-                 plot_rc={}):
+                 plot_rc={}, is_test=None):
         self.current = BasicTimeWindow(0., 20.)
         self.records = record_wins  # ConcatTimeWindow
         self.sliding = sliding_wins  # List
@@ -210,14 +210,17 @@ class ScorePlot(object):
         self.example_labels = example_labels
         self.plot_rc = self.default_plot_rc.copy()
         self.plot_rc.update(plot_rc)
+        self._is_test = is_test
 
     def is_test(self, record):
         """Returns whether sentence is from test set.
 
            Mainly used to print its transcription in bold.
-           Redefine this function for another behavior.
         """
-        return True
+        if self._is_test is None:
+            return True
+        else:
+            return self._is_test(record)
 
     def subwindows(self, win):
         return win.get_subwindow(self.current.absolute_start,
@@ -299,9 +302,9 @@ class ScorePlot(object):
 class InteractivePlot(object):
 
     def __init__(self, record_wins, sliding_wins, example_labels,
-                 similarities):
+                 similarities, is_test=None):
         self.score_plot = ScorePlot(record_wins, sliding_wins, example_labels,
-                                    similarities)
+                                    similarities, is_test=is_test)
         self.fig, self.main_ax = self.score_plot.fig, self.score_plot.main_ax
         plt.subplots_adjust(bottom=0.2)
         self.score_plot.draw()
