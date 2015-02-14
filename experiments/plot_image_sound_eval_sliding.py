@@ -5,7 +5,6 @@ import matplotlib as plt
 
 from multimodal.lib.metrics import mutual_information
 from multimodal.lib.logger import Logger
-from multimodal.lib.plot import pcolormesh
 from multimodal.lib.window import (BasicTimeWindow, ConcatTimeWindow,
                                    concat_from_list_of_wavs,
                                    slider)
@@ -16,10 +15,11 @@ from multimodal.plots import InteractivePlot, plot_one_sentence
 WIDTH = .5
 SHIFT = .1
 
+WORKDIR = os.path.expanduser('~/work/data/results/quick/')
 
 sound_loader = AcornsLoader(1)
 
-logger = Logger.load(os.path.expanduser('~/work/data/results/quick/sliding'))
+logger = Logger.load(os.path.join(WORKDIR, 'sliding'))
 
 # Build windows to access time and metadata
 sound_modality = logger.get_value('modalities').index('sound')
@@ -88,16 +88,49 @@ myplot = InteractivePlot(record_wins, sliding_wins, similarities,
                          example_labels)
 myplot.is_test = lambda r: r in test_records
 
-test_record_wins = [w for w in record_wins.windows if w.obj in test_records]
-for r in test_record_wins[:10]:
-    plot_one_sentence(r, sliding_wins, similarities, example_labels)
+# Prepare for plotting sentence results in files
+DESTDIR = os.path.join(WORKDIR, 'sliding_win_plots')
+if not os.path.exists(DESTDIR):
+    os.mkdir(DESTDIR)
+PLOT_PARAMS = {
+    'font.family': 'serif',
+    'font.size': 9.0,
+    'font.serif': 'Computer Modern Roman',
+    'text.usetex': 'True',
+    'text.latex.unicode': 'True',
+    'axes.titlesize': 'large',
+    'axes.labelsize': 'large',
+    'legend.fontsize': 'medium',
+    'xtick.labelsize': 'small',
+    'ytick.labelsize': 'small',
+    'path.simplify': 'True',
+    'savefig.bbox': 'tight',
+    'figure.figsize': (8, 4),
+}
+SENTENCE_PLOT_RC = {
+    'window_boundaries_color': 'gray',
+    'window_boundaries_line_width': 1,
+}
+with plt.rc_context(rc=PLOT_PARAMS):
+    plt.pyplot.interactive(False)
+    # Plot sentence results to disk
+    test_record_wins = [w for w in record_wins.windows
+                        if w.obj in test_records]
+    for r in test_record_wins[:5]:
+        path = os.path.join(DESTDIR, '{}.svg'.format(
+            r.obj.audio.split('.')[0]))
+        score_plot = plot_one_sentence(r, sliding_wins, similarities,
+                                       example_labels,
+                                       plot_rc=SENTENCE_PLOT_RC)
+        score_plot.fig.savefig(path, transparent=True)
+        print('Written: {}.'.format(path))
 
-plt.pyplot.figure()
-#most_info = np.nonzero(np.max(word_label_info, axis=1) > .04)[0]
-#p = pcolormesh(word_label_info[most_info, :],
-#               xticklabels=all_labels,
-#               yticklabels=[all_words[i] for i in most_info])
-p = pcolormesh(word_label_info, xticklabels=all_labels, yticklabels=all_words)
-plt.pyplot.colorbar(p)
-
-#plot_one_sentence(record_wins[0], sliding_wins, sound_labels, similarities)
+#plt.pyplot.figure()
+##most_info = np.nonzero(np.max(word_label_info, axis=1) > .04)[0]
+##p = pcolormesh(word_label_info[most_info, :],
+##               xticklabels=all_labels,
+##               yticklabels=[all_words[i] for i in most_info])
+#p = pcolormesh(word_label_info, xticklabels=all_labels, yticklabels=all_words)
+#plt.pyplot.colorbar(p)
+#
+##plot_one_sentence(record_wins[0], sliding_wins, sound_labels, similarities)

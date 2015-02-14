@@ -190,8 +190,16 @@ def plot_boxes_by_feats(loggers):
 # TODO: use fact that windows are sorted to opimize filter
 class ScorePlot(object):
 
+    default_plot_rc = {
+            'draw_sentence_boundaries': True,
+            'use_relative_time': False,
+            'print_sentences': True,
+            'window_boundaries_color': 'white',
+            'window_boundaries_line_width': 2,
+            }
+
     def __init__(self, record_wins, sliding_wins, similarities, example_labels,
-                 draw_sentence_boundaries=True, use_relative_time=False):
+                 plot_rc={}):
         self.current = BasicTimeWindow(0., 20.)
         self.records = record_wins  # ConcatTimeWindow
         self.sliding = sliding_wins  # List
@@ -200,8 +208,8 @@ class ScorePlot(object):
                            for i, w in enumerate(self.sliding)]
         self.fig, self.main_ax = plt.subplots()
         self.example_labels = example_labels
-        self.draw_sentence_boundaries = draw_sentence_boundaries
-        self.use_relative_time = use_relative_time
+        self.plot_rc = self.default_plot_rc.copy()
+        self.plot_rc.update(plot_rc)
 
     def is_test(self, record):
         """Returns whether sentence is from test set.
@@ -229,7 +237,7 @@ class ScorePlot(object):
     def relative_time(self, time):
         """Return relative or absolute time depending on setup.
         """
-        if self.use_relative_time:
+        if self.plot_rc['use_relative_time']:
             return time - self.current.absolute_start
         else:
             return time
@@ -260,22 +268,31 @@ class ScorePlot(object):
         # Plot window boundaries
         for (t, s) in zip(win_boundaries, similarities):
             y = max(s)
-            self.main_ax.plot(t, (y, y), color='white', linewidth=2)
+            self.main_ax.plot(
+                    t, (y, y),
+                    color=self.plot_rc['window_boundaries_color'],
+                    linewidth=self.plot_rc['window_boundaries_line_width'])
         # Plot scores
         plots = plot(times, similarities,
                      linestyle='-', marker='o', ax=self.main_ax)
         # Plot sentence text and boundaries
         for w in self.subwindows(self.records):
-            self.main_ax.text(
-                self.relative('mean', w), -.05, w.obj.trans,
-                horizontalalignment='center',
-                fontdict={'color': 'black' if self.is_test(w.obj) else 'gray'})
-            if self.draw_sentence_boundaries:
+            if self.plot_rc['print_sentences']:
+                # TODO find a better way to place text
+                self.main_ax.text(
+                    self.relative('mean', w), -.04, w.obj.trans,
+                    horizontalalignment='center',
+                    fontdict={'color': 'black' if self.is_test(w.obj)
+                              else 'gray'})
+                self.main_ax.xaxis.labelpad = 12
+            if self.plot_rc['draw_sentence_boundaries']:
                 self.main_ax.axvline(x=self.relative('end', w),
                                      linewidth=2, linestyle='-', color='gray')
         legend(plots, self.example_labels, ax=self.main_ax)
         self.main_ax.set_xbound(self.relative('start', self.current),
                                 self.relative('end', self.current))
+        self.main_ax.set_xlabel('Time (s)')
+        self.main_ax.set_ylabel('Similarity (cosine)')
         self.fig.canvas.draw_idle()
 
 
@@ -316,11 +333,18 @@ class InteractivePlot(object):
         self.update(None)
 
 
-def plot_one_sentence(record_win, sliding_wins, example_labels, similarities):
+def plot_one_sentence(record_win, sliding_wins, example_labels, similarities,
+                      plot_rc):
+    default_plot_rc = {'draw_sentence_boundaries': False,
+                       'use_relative_time': True,
+                       'print_sentences': False,
+                       }
+    default_plot_rc.update(plot_rc)
     score_plot = ScorePlot(ConcatTimeWindow([record_win]), sliding_wins,
                            example_labels, similarities,
-                           draw_sentence_boundaries=False,
-                           use_relative_time=True)
+                           plot_rc=default_plot_rc)
     score_plot.current.absolute_start = record_win.absolute_start
     score_plot.current.absolute_end = record_win.absolute_end
     score_plot.draw()
+    score_plot.main_ax.set_title(record_win.obj.trans)
+    return score_plot
