@@ -130,6 +130,11 @@ with plt.rc_context(rc=PLOT_PARAMS):
             score_plot.fig.savefig(path, transparent=True)
             print('Written: {}.'.format(path))
 
+# Also dump train transcriptions to file
+with open(os.path.join(DESTDIR, 'train_trans.txt'), 'w') as f:
+    f.write('\n'.join([r.trans for r in sound_loader.records
+                       if r not in test_records]))
+
 #plt.pyplot.figure()
 ##most_info = np.nonzero(np.max(word_label_info, axis=1) > .04)[0]
 ##p = pcolormesh(word_label_info[most_info, :],
