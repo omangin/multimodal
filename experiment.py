@@ -224,6 +224,9 @@ class TwoModalitiesExperiment(MultimodalExperiment):
                 found = classify_NN(transformed_data_test[mod1][mod_cmp],
                                     transformed_data_ex[mod2][mod_cmp],
                                     self.labels_ex, metric)
+                # Store found labels
+                self.logger.store_result(
+                    self._get_found_key(mod1, mod2, mod_cmp, suffix), found)
                 # Conpute score
                 self.logger.store_result(
                     self._get_score_key(mod1, mod2, mod_cmp, suffix),
@@ -249,11 +252,17 @@ class TwoModalitiesExperiment(MultimodalExperiment):
             out[in_mod].append(internals[in_mod])
         return out
 
-    def _get_score_key(self, mod1, mod2, mod_cmp, metric):
-        return "score_{}2{}{}{}".format(
+    def _get_exp_key(self, mod1, mod2, mod_cmp, metric):
+        return "{}2{}{}{}".format(
             self.modalities[mod1], self.modalities[mod2],
             '' if mod_cmp == INTERNAL else '_' + self.modalities[mod_cmp],
             metric)
+
+    def _get_score_key(self, mod1, mod2, mod_cmp, metric):
+        return "score_" + self._get_exp_key(mod1, mod2, mod_cmp, metric)
+
+    def _get_found_key(self, mod1, mod2, mod_cmp, metric):
+        return "found_" + self._get_exp_key(mod1, mod2, mod_cmp, metric)
 
     def _get_result(self, mod1, mod2, mod_cmp, metric_key):
         key = self._get_score_key(mod1, mod2, mod_cmp, metric_key)
