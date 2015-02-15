@@ -36,6 +36,10 @@ def _cmap_from_data(x):
     return cmap
 
 
+def get_n_colors(n, color_map=plt.get_cmap()):
+    return [color_map((1. * i) / n) for i in range(n)]
+
+
 def plot(*args, **kwargs):
     ax = kwargs.pop('ax', None) or plt.gca()
     if 'linewidth' not in kwargs:

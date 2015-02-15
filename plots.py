@@ -196,6 +196,7 @@ class ScorePlot(object):
             'print_sentences': True,
             'window_boundaries_color': 'white',
             'window_boundaries_line_width': 2,
+            'colors': None,
             }
 
     def __init__(self, record_wins, sliding_wins, similarities, example_labels,
@@ -268,6 +269,8 @@ class ScorePlot(object):
                 [w.obj for w in self.filter_windows(self.similarity)])
         # Clean and Plot
         self.main_ax.cla()
+        if self.plot_rc['colors'] is not None:
+            self.main_ax.set_color_cycle(self.plot_rc['colors'])
         # Plot window boundaries
         for (t, s) in zip(win_boundaries, similarities):
             y = max(s)
@@ -302,9 +305,10 @@ class ScorePlot(object):
 class InteractivePlot(object):
 
     def __init__(self, record_wins, sliding_wins, example_labels,
-                 similarities, is_test=None):
+                 similarities, is_test=None, plot_rc=None):
         self.score_plot = ScorePlot(record_wins, sliding_wins, example_labels,
-                                    similarities, is_test=is_test)
+                                    similarities, is_test=is_test,
+                                    plot_rc=plot_rc)
         self.fig, self.main_ax = self.score_plot.fig, self.score_plot.main_ax
         plt.subplots_adjust(bottom=0.2)
         self.score_plot.draw()

@@ -8,6 +8,7 @@ from multimodal.lib.logger import Logger
 from multimodal.lib.window import (BasicTimeWindow, ConcatTimeWindow,
                                    concat_from_list_of_wavs,
                                    slider)
+from multimodal.lib.plot import get_n_colors
 from multimodal.db.acorns import Year1Loader as AcornsLoader
 from multimodal.plots import InteractivePlot, plot_one_sentence
 
@@ -16,6 +17,7 @@ WIDTH = .5
 SHIFT = .1
 
 WORKDIR = os.path.expanduser('~/work/data/results/quick/')
+COLORS = get_n_colors(10, color_map=plt.pyplot.get_cmap('spectral'))
 
 sound_loader = AcornsLoader(1)
 
@@ -85,7 +87,8 @@ plt.interactive(True)
 plt.style.use('ggplot')
 example_labels = [sound_labels[i] for i in logger.get_last_value('label_ex')]
 myplot = InteractivePlot(record_wins, sliding_wins, similarities,
-                         example_labels, is_test=lambda r: r in test_records)
+                         example_labels, is_test=lambda r: r in test_records,
+                         plot_rc={'colors': COLORS})
 
 # Prepare for plotting sentence results in files
 DESTDIR = os.path.join(WORKDIR, 'sliding_win_plots')
@@ -109,20 +112,23 @@ PLOT_PARAMS = {
 SENTENCE_PLOT_RC = {
     'window_boundaries_color': 'gray',
     'window_boundaries_line_width': 1,
+    'colors': COLORS,
 }
 with plt.rc_context(rc=PLOT_PARAMS):
     plt.pyplot.interactive(False)
     # Plot sentence results to disk
     test_record_wins = [w for w in record_wins.windows
                         if w.obj in test_records]
-    for r in test_record_wins[:5]:
-        path = os.path.join(DESTDIR, '{}.svg'.format(
-            r.obj.audio.split('.')[0]))
+    for r in test_record_wins:
         score_plot = plot_one_sentence(r, sliding_wins, similarities,
                                        example_labels,
                                        plot_rc=SENTENCE_PLOT_RC)
-        score_plot.fig.savefig(path, transparent=True)
-        print('Written: {}.'.format(path))
+        for ext in ['svg', 'pdf']:
+            path = os.path.join(DESTDIR, '{}.{}'.format(
+                r.obj.audio.split('.')[0],
+                ext))
+            score_plot.fig.savefig(path, transparent=True)
+            print('Written: {}.'.format(path))
 
 #plt.pyplot.figure()
 ##most_info = np.nonzero(np.max(word_label_info, axis=1) > .04)[0]
