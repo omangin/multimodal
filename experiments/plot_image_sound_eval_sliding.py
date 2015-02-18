@@ -97,6 +97,7 @@ myplot = InteractivePlot(record_wins, sliding_wins, similarities,
 DESTDIR = os.path.join(WORKDIR, 'sliding_win_plots')
 if not os.path.exists(DESTDIR):
     os.mkdir(DESTDIR)
+    os.mkdir(os.path.join(DESTDIR, 'annotated'))
 PLOT_PARAMS = {
     'font.family': 'serif',
     'font.size': 9.0,
@@ -118,26 +119,52 @@ SENTENCE_PLOT_RC = {
     'colors': COLORS,
     'markersize': 3,
 }
-with plt.rc_context(rc=PLOT_PARAMS):
-    plt.pyplot.interactive(False)
-    # Plot sentence results to disk
-    test_record_wins = [w for w in record_wins.windows
-                        if w.obj in test_records]
-    for r in test_record_wins:
-        score_plot = plot_one_sentence(r, sliding_wins, similarities,
-                                       example_labels,
-                                       plot_rc=SENTENCE_PLOT_RC)
-        for ext in ['svg', 'pdf']:
-            path = os.path.join(DESTDIR, '{}.{}'.format(
-                r.obj.audio.split('.')[0],
-                ext))
-            score_plot.fig.savefig(path, transparent=True)
-            print('Written: {}.'.format(path))
+# Plot sentence results to disk
+test_record_wins = [w for w in record_wins.windows
+                    if w.obj in test_records]
+#with plt.rc_context(rc=PLOT_PARAMS):
+#    plt.pyplot.interactive(False)
+#    for r in test_record_wins:
+#        score_plot = plot_one_sentence(r, sliding_wins, similarities,
+#                                       example_labels,
+#                                       plot_rc=SENTENCE_PLOT_RC)
+#        for ext in ['svg', 'pdf']:
+#            path = os.path.join(DESTDIR, '{}.{}'.format(
+#                r.obj.audio.split('.')[0],
+#                ext))
+#            score_plot.fig.savefig(path, transparent=True)
+#            print('Written: {}.'.format(path))
 
 # Also dump train transcriptions to file
 with open(os.path.join(DESTDIR, 'train_trans.txt'), 'w') as f:
     f.write('\n'.join([r.trans for r in sound_loader.records
                        if r not in test_records]))
+
+ANNOTATIONS = [
+    (36, [('book', (.8, 1.))]),  # 0648
+    (89, [('Daddy', (.72, .96))]),  # 0215
+    (16, [('Angus', (.74, 1.01)),
+          ('shoe', (1.53, 1.93))]),  # 0595
+    (67, [('bottle', (1., 1.28))]),  # 0771
+]
+with plt.rc_context(rc=PLOT_PARAMS):
+    plt.pyplot.interactive(False)
+    # Plot sentence results to disk
+    test_record_wins = [w for w in record_wins.windows
+                        if w.obj in test_records]
+    for i, ann in ANNOTATIONS:
+        win = test_record_wins[i]
+        score_plot = plot_one_sentence(win, sliding_wins, similarities,
+                                       example_labels,
+                                       plot_rc=SENTENCE_PLOT_RC,
+                                       annotate=ann)
+        for ext in ['svg', 'pdf']:
+            path = os.path.join(DESTDIR, 'annotated', '{}.{}'.format(
+                win.obj.audio.split('.')[0],
+                ext))
+            score_plot.fig.savefig(path, transparent=True)
+            print('Written: {}.'.format(path))
+
 
 # Print confusion matrix
 found_labels = logger.get_last_value('found_sound2objects_cosine')

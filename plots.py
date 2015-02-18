@@ -213,6 +213,7 @@ class ScorePlot(object):
         self.plot_rc = self.default_plot_rc.copy()
         self.plot_rc.update(plot_rc)
         self._is_test = is_test
+        self._y_annotation = None
 
     def is_test(self, record):
         """Returns whether sentence is from test set.
@@ -295,14 +296,28 @@ class ScorePlot(object):
                               else 'gray'})
                 self.main_ax.xaxis.labelpad = 12
             if self.plot_rc['draw_sentence_boundaries']:
-                self.main_ax.axvline(x=self.relative('end', w),
-                                     linewidth=2, linestyle='-', color='gray')
+                self.draw_vertical_line(self.relative('end', w))
         legend(plots, self.example_labels, ax=self.main_ax)
         self.main_ax.set_xbound(self.relative('start', self.current),
                                 self.relative('end', self.current))
         self.main_ax.set_xlabel('Time (s)')
         self.main_ax.set_ylabel('Similarity (cosine)')
         self.fig.canvas.draw_idle()
+
+    def draw_vertical_line(self, time):
+        self.main_ax.axvline(x=time, linewidth=2, linestyle='-', color='gray',
+                             zorder=1)
+
+    def annotate(self, boundaries, text):
+        """Must happen after other plots to prevent text over plots."""
+        self.main_ax.axvspan(*boundaries, alpha=0.5, color='LightGray')
+        if self._y_annotation is None:
+            self._y_annotation = self.main_ax.get_ylim()[1]
+            self.main_ax.set_ybound(0, self._y_annotation + .03)
+        xy = (.5 * (boundaries[0] + boundaries[1]), self._y_annotation)
+        self.main_ax.annotate(
+            text, xy, xytext=xy,
+            horizontalalignment='center', weight='bold', zorder=20)
 
 
 class InteractivePlot(object):
@@ -344,7 +359,8 @@ class InteractivePlot(object):
 
 
 def plot_one_sentence(record_win, sliding_wins, example_labels, similarities,
-                      plot_rc):
+                      plot_rc, annotate=[]):
+    """annotate: list of (text, (start, end))"""
     default_plot_rc = {'draw_sentence_boundaries': False,
                        'use_relative_time': True,
                        'print_sentences': False,
@@ -357,4 +373,6 @@ def plot_one_sentence(record_win, sliding_wins, example_labels, similarities,
     score_plot.current.absolute_end = record_win.absolute_end
     score_plot.draw()
     score_plot.main_ax.set_title(record_win.obj.trans)
+    for a in annotate:
+        score_plot.annotate(a[1], a[0])
     return score_plot
