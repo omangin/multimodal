@@ -29,26 +29,29 @@ assoc_idx = logger.get_value('sample_pairing')
 test_idx = [assoc_idx[i][sound_modality]
             for i in logger.get_last_value('test')]
 test_records = set([sound_loader.records[i] for i in test_idx])
-test_wavs = [sound_loader.records[i[sound_modality]].get_audio_path()
-             for i in assoc_idx]
+all_wavs = [sound_loader.records[i[sound_modality]].get_audio_path()
+            for i in assoc_idx]
+all_sound_labels = sound_loader.get_labels()
+sound_labels = logger.get_value('label_pairing')[sound_modality]
+n_labels = len(sound_labels)
+test_labels = [sound_labels.index(all_sound_labels[i]) for i in test_idx]
 print('Building time windows from wav files...')
-test_sound_wins = concat_from_list_of_wavs(test_wavs)
+sound_wins = concat_from_list_of_wavs(all_wavs)
 # Also build index windows
 record_wins = ConcatTimeWindow([
     BasicTimeWindow(w.absolute_start, w.absolute_end,
                     obj=sound_loader.records[i[sound_modality]])
-    for i, w in zip(assoc_idx, test_sound_wins.windows)
+    for i, w in zip(assoc_idx, sound_wins.windows)
     ])
 # Sliding windows
-sliding_wins = [test_sound_wins.get_subwindow(ts, te)
-                for ts, te in slider(test_sound_wins.absolute_start,
-                                     test_sound_wins.absolute_end,
+sliding_wins = [sound_wins.get_subwindow(ts, te)
+                for ts, te in slider(sound_wins.absolute_start,
+                                     sound_wins.absolute_end,
                                      WIDTH, SHIFT)
                 ]
 
 
 similarities = -logger.get_last_value('sliding_distances')
-sound_labels = logger.get_value('label_pairing')[sound_modality]
 
 
 def word_histo_by_label(records, labels):
@@ -113,6 +116,7 @@ SENTENCE_PLOT_RC = {
     'window_boundaries_color': 'gray',
     'window_boundaries_line_width': 1,
     'colors': COLORS,
+    'markersize': 3,
 }
 with plt.rc_context(rc=PLOT_PARAMS):
     plt.pyplot.interactive(False)
@@ -134,6 +138,16 @@ with plt.rc_context(rc=PLOT_PARAMS):
 with open(os.path.join(DESTDIR, 'train_trans.txt'), 'w') as f:
     f.write('\n'.join([r.trans for r in sound_loader.records
                        if r not in test_records]))
+
+# Print confusion matrix
+found_labels = logger.get_last_value('found_sound2objects_cosine')
+confusion = np.zeros((n_labels, n_labels))
+assert(len(test_labels) == len(found_labels))
+for l, lfound in zip(test_labels, found_labels):
+    confusion[l, lfound] += 1.
+print(sound_labels)
+print(confusion)
+
 
 #plt.pyplot.figure()
 ##most_info = np.nonzero(np.max(word_label_info, axis=1) > .04)[0]

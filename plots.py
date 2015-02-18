@@ -196,6 +196,7 @@ class ScorePlot(object):
             'print_sentences': True,
             'window_boundaries_color': 'white',
             'window_boundaries_line_width': 2,
+            'markersize': 5,
             'colors': None,
             }
 
@@ -280,7 +281,9 @@ class ScorePlot(object):
                     linewidth=self.plot_rc['window_boundaries_line_width'])
         # Plot scores
         plots = plot(times, similarities,
-                     linestyle='-', marker='o', ax=self.main_ax)
+                     linestyle='-', marker='o',
+                     markersize=self.plot_rc['markersize'],
+                     ax=self.main_ax)
         # Plot sentence text and boundaries
         for w in self.subwindows(self.records):
             if self.plot_rc['print_sentences']:
