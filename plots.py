@@ -22,6 +22,8 @@ PAIRS_COLORS = {('image', 'motion'): '#006EB8',
                 ('sound', 'motion'): '#FBB982',
                 }
 
+SCORE_NAME = 'Cross-modal association success rate'
+
 
 def figure(**kwargs):
     if 'frameon' not in kwargs:
@@ -96,7 +98,7 @@ def plot_2k_graphs(loggers, ks, title='', metric=''):
     ax = plt.gca()
     ax.add_artist(legend1)
     ax.set_xlabel('k')
-    ax.set_ylabel('Cross-modal association score')
+    ax.set_ylabel(SCORE_NAME)
     plt.title(title)
     return fig
 
@@ -108,7 +110,7 @@ def plot_boxes_one_exp(logger, mods_to_mods, colors=None, xticks=False):
     vals = [logger.get_values("score_{}2{}_cosine".format('_'.join(mods1),
                                                           '_'.join(mods2)))
             for mods1, mods2 in mods_to_mods]
-    boxes = boxplot(vals, xticklabels=[])['boxes']
+    boxes = boxplot(vals, xticklabels=[], widths=.3)['boxes']
     polygons = []
     for box, mods in zip(boxes, mods_to_mods):
         coords = zip(box.get_xdata(), box.get_ydata())
@@ -135,7 +137,7 @@ def plot_boxes(loggers2, logger3):
     for i, mods in enumerate(loggers2):
         if i == 0:
             ax1 = plt.subplot(1, 2 * nb_pairs, 1 + i)
-            ax1.set_ylabel('Cross-modal association score')
+            ax1.set_ylabel(SCORE_NAME)
         else:
             ax = plt.subplot(1, 2 * nb_pairs, 1 + i, sharey=ax1)
             ax.label_outer()
@@ -156,11 +158,17 @@ def plot_boxes(loggers2, logger3):
 
 def plot_boxes_all_mods(logger3):
     fig = figure()
+    ax = plt.gca()
     mods = logger3.get_value('modalities')
     polygons, labels = plot_boxes_one_exp(logger3, combinations(mods))
-    plt.gca().set_ylabel('Cross-modal association score')
+    ax.set_ylabel(SCORE_NAME)
     plt.title(', '.join(mods))
-    legend(polygons, labels, ncol=3, loc='lower center')
+    split_polygons = np.split(np.array(polygons), 3)
+    split_labels = np.split(np.array(labels), 3)
+    for pol, lab, horiz in zip(split_polygons, split_labels,
+                               ['left', 'center', 'right']):
+        leg = legend(pol, lab, loc='lower ' + horiz)
+        ax.add_artist(leg)
     return fig
 
 
