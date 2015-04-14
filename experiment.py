@@ -60,32 +60,35 @@ class MultimodalExperiment(Experiment):
             d[attr] = self.__getattribute__(attr)
         return d
 
-    def prepare(self):
-        # Log parameters
-        params = self._parameters_to_dict()
-        for key in params:
-            self.logger.store_global(key, params[key])
-        # Load data
-        raw_data = [loader.get_data() for loader in self.loaders]
-        # Compute coefficients
-        self.coefs = [1. / np.average(x.sum(axis=1)) for x in raw_data]
-        # Generate pairing
-        raw_labels = [loader.get_labels() for loader in self.loaders]
-        (label_assoc, labels, assoc_idx) = associate_samples(
-            raw_labels, shuffle=self.shuffle_labels)
+    def _get_raw_labels(self):
+        return [loader.get_labels() for loader in self.loaders]
+
+    def _set_coefs(self, raw_data):
+        if self.coefs is None:
+            self.coefs = [1. / np.average(x.sum(axis=1)) for x in raw_data]
+
+    def _set_labels_and_prepare_data(self, label_assoc, labels, assoc_idx):
         self.label_association = label_assoc
         self.labels_all = labels
-        self.data = [x[[idx[i] for idx in assoc_idx], :]
-                     for i, x in enumerate(raw_data)]
         self.logger.store_global('label_pairing', self.label_association)
         self.logger.store_global('sample_pairing', assoc_idx)
+        # Load data
+        raw_data = [loader.get_data() for loader in self.loaders]
+        # Eventually compute weighting coefficients for modalities
+        self._set_coefs(raw_data)
+        # Order data
+        self.data = [x[[idx[i] for idx in assoc_idx], :]
+                     for i, x in enumerate(raw_data)]
         if self.debug:  # Reduce size of data for quick execution
             self.logger.log(
                 'WARNING: Debug mode active, using subset of the database')
             self.data = [x[:200, :11] for x in self.data]
             self.labels_all = self.labels_all[:200]
-        # Extract examples for evaluation
-        self.examples = chose_examples([l for l in self.labels_all])
+
+    def _set_data_and_labels_for_examples(self, examples):
+        """Split data and labels between examples and other (for train & test).
+        """
+        self.examples = examples
         self.logger.store_global('examples', self.examples)
         self.others = [i for i in range(len(self.labels_all))
                        if i not in self.examples]
@@ -93,6 +96,20 @@ class MultimodalExperiment(Experiment):
         self.data = [x[self.others, :] for x in self.data]
         self.labels_ex = [self.labels_all[i] for i in self.examples]
         self.labels = [self.labels_all[i] for i in self.others]
+    
+    def prepare(self):
+        # Log parameters
+        params = self._parameters_to_dict()
+        for key in params:
+            self.logger.store_global(key, params[key])
+        # Generate pairing and order data
+        raw_labels = self._get_raw_labels()
+        (label_assoc, labels, assoc_idx) = associate_samples(
+            raw_labels, shuffle=self.shuffle_labels)
+        self._set_labels_and_prepare_data(label_assoc, labels, assoc_idx)
+        # Chose examples for evaluation and split labels and data
+        self._set_data_and_labels_for_examples(
+                chose_examples([l for l in self.labels_all]))
         self.run_generator = self.get_generator()
         # Safety...
         assert(set(self.labels_ex) == set(self.labels_all))
@@ -130,6 +147,10 @@ class MultimodalExperiment(Experiment):
         except self.logger.NoFileError:
             print('Not saving logs: no destination was provided.')
 
+    def _get_new_learner(self):
+        return MultimodalLearner(self.modalities, self.n_features,
+                                 self.coefs, self.k)
+
     def _perform_one_run(self):
         train, test = self.run_generator.next()
         self.logger.new_run()
@@ -139,8 +160,7 @@ class MultimodalExperiment(Experiment):
         data_test = [x[test, :] for x in self.data]
         test_labels = [self.labels[t] for t in test]
         # Init Learner
-        learner = MultimodalLearner(self.modalities, self.n_features,
-                                    self.coefs, self.k)
+        learner = self._get_new_learner()
         # Train
         learner.train(data_train, self.iter_train)
         self.logger.store('dictionary', learner.get_dico())

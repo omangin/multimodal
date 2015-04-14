@@ -141,6 +141,8 @@ def pcolormesh(x, **kwargs):
     yticklabels = kwargs.pop('yticklabels', None)
     # Plot
     p = ax.pcolormesh(x, **kwargs)
+    # Clear
+    remove_chartjunk(ax, ['top', 'right', 'bottom', 'left'])
     # Set ticks
     if xticklabels:
         ax.set_xticks(np.arange(0.5, x.shape[1] + 0.5))
@@ -148,6 +150,8 @@ def pcolormesh(x, **kwargs):
     if yticklabels:
         ax.set_yticks(np.arange(0.5, x.shape[0] + 0.5))
         ax.set_yticklabels(yticklabels)
+    ax.set_xlim([0, x.shape[1]])
+    ax.set_ylim([0, x.shape[0]])
     return p
 
 
