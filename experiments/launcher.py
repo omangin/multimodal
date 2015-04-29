@@ -56,7 +56,7 @@ DEFAULT_PLOT_PARAMS = {
     'ytick.labelsize': 'small',
     'path.simplify': 'True',
     'savefig.bbox': 'tight',
-    'figure.figsize': (8, 6),
+    'figure.figsize': (7.5, 6),
 }
 
 args = parser.parse_args()

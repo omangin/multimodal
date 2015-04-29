@@ -16,10 +16,10 @@ from multimodal.db.acorns import Year1Loader as AcornsLoader
 from multimodal.db.objects import ObjectsLoader
 
 
-WORKDIR = os.path.expanduser('~/work/data/results/multimodal/mutual_info')
+WORKDIR = os.path.expanduser('~/work/data/results/multimodal')
 SCRIPT3 = os.path.join(os.path.dirname(__file__), 'three_modalities.py')
 DEFAULT_FIG_DEST = os.path.expanduser(
-    '~/work/doc/illus/results/multimodal/gen/')
+    '~/work/doc/illus/results/multimodal/gen/mutual_info')
 DEFAULT_PLOT_PARAMS = {
     'font.family': 'serif',
     'font.size': 9.0,
@@ -33,7 +33,7 @@ DEFAULT_PLOT_PARAMS = {
     'ytick.labelsize': 'small',
     'path.simplify': 'True',
     'savefig.bbox': 'tight',
-    'figure.figsize': (8, 6),
+    'figure.figsize': (7.5, 6),
 }
 CMAP = plt.cm.Blues
 

@@ -111,7 +111,7 @@ PLOT_PARAMS = {
     'ytick.labelsize': 'small',
     'path.simplify': 'True',
     'savefig.bbox': 'tight',
-    'figure.figsize': (8, 4),
+    'figure.figsize': (7.5, 4),
 }
 SENTENCE_PLOT_RC = {
     'window_boundaries_color': 'gray',
@@ -158,7 +158,7 @@ with plt.rc_context(rc=PLOT_PARAMS):
                                        example_labels,
                                        plot_rc=SENTENCE_PLOT_RC,
                                        annotate=ann)
-        for ext in ['svg', 'pdf']:
+        for ext in ['svg', 'pdf', 'eps']:
             path = os.path.join(DESTDIR, 'annotated', '{}.{}'.format(
                 win.obj.audio.split('.')[0],
                 ext))
