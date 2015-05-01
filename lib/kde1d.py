@@ -34,7 +34,7 @@ def get_bins_1d(x, nb_bins, bounds=None):
         - bins: bins array containing the sum of weights over samples.
     """
     if nb_bins < 2:
-        raise ValueError, ('Number of bins must be at least two, ' + str(nb_bins))
+        raise ValueError('Number of bins must be at least two, ' + str(nb_bins))
     (nb_samples,) = x.shape
     # Binning samples
     if bounds is None:
@@ -44,7 +44,7 @@ def get_bins_1d(x, nb_bins, bounds=None):
         (x_min, x_max) = bounds
         # Just in case...
         if (x_min > np.min(x)) or (x_max < np.max(x)):
-            raise ValueError, 'Wrong bounds.'
+            raise ValueError('Wrong bounds.')
     x_range = x_max - x_min
     # Generate grid
     delta_x = x_range / float(nb_bins - 1)

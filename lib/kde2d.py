@@ -32,10 +32,10 @@ def get_bins_2d(samples, nb_bins, bounds=None):
         - bins: bins array containing the sum of weights over samples.
     """
     if nb_bins < 2:
-        raise ValueError, ('Number of bins must be at least two, ' + str(nb_bins))
+        raise ValueError('Number of bins must be at least two, ' + str(nb_bins))
     (nb_samples, d) = samples.shape
     if not d == 2:
-        raise ValueError, 'Samples must be two dimensional.'
+        raise ValueError('Samples must be two dimensional.')
     # Binning samples
     if bounds is None:
         x_min = np.min(samples[:, 0])
