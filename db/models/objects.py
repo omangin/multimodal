@@ -153,7 +153,7 @@ class ObjectDB(object):
                 for obj_feat in f.read_features(os.path.dirname(path)):
                     db.add_feats(obj_feat)
                 db.add_frame(f)
-            except IOError, e:
+            except IOError as e:
                 skipped += 1
                 if verbosity is 'verbose':
                     print("Skipping file %s (%s)" % (f.filename, e.strerror))

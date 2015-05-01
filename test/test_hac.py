@@ -14,17 +14,17 @@ class TestCoocurrences(unittest.TestCase):
 
     def test_shape_is_square(self):
         result = coocurrences(self.random_quantized, self.n_centro, lag=17)
-        self.assertEquals(result.shape, (self.n_centro ** 2,))
+        self.assertEqual(result.shape, (self.n_centro ** 2,))
 
     def test_count_is_same(self):
         result = coocurrences(self.random_quantized, self.n_centro, lag=17)
-        self.assertEquals(sum(result), self.random_quantized.shape[0] - 17)
+        self.assertEqual(sum(result), self.random_quantized.shape[0] - 17)
 
     def test_dummy(self):
         quantized = np.array([0, 1, 1, 0, 1, 1, 1])
         result = coocurrences(quantized, 2, lag=2)
         counts = [0, 1, 2, 2]
-        self.assertEquals(list(result), counts)
+        self.assertEqual(list(result), counts)
 
 
 class TestIterativeKmeans(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestIterativeKmeans(unittest.TestCase):
     def test_shape_is_ok(self):
         data = np.random.random((20, 3))
         centroids = iterative_kmeans(data, 5)
-        self.assertEquals(centroids.shape, (5, 3))
+        self.assertEqual(centroids.shape, (5, 3))
 
     def test_is_converged(self):
         data = np.random.random((20, 3))

@@ -14,10 +14,10 @@ class TestRandomSplit(TestCase):
                              for x in random_split(self.n, self.ratio)]))
 
     def test_returns_10_sets(self):
-        self.assertEquals(10, len([x for x in random_split(self.n, .1)]))
+        self.assertEqual(10, len([x for x in random_split(self.n, .1)]))
 
     def test_returns_9_sets(self):
-        self.assertEquals(9, len([x for x in random_split(self.n, .11)]))
+        self.assertEqual(9, len([x for x in random_split(self.n, .11)]))
 
     def test_are_disjoint(self):
         self.assertTrue(all(
@@ -44,7 +44,7 @@ class TestLeaveOneOut(TestCase):
         self.assertTrue(all([len(x) == 2 for x in leave_one_out(self.n)]))
 
     def test_returns_37_sets(self):
-        self.assertEquals(37, len([x for x in leave_one_out(self.n)]))
+        self.assertEqual(37, len([x for x in leave_one_out(self.n)]))
 
     def test_are_disjoint(self):
         self.assertTrue(all([set(test).isdisjoint(set(train))
