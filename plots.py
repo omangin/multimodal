@@ -361,8 +361,8 @@ class InteractivePlot(object):
             direction = -1
         else:
             return
-        self.slider_start.set_val(self.slider_start.val
-                                  + direction * .5 * self.slider_width.val)
+        self.slider_start.set_val(self.slider_start.val +
+                                  direction * .5 * self.slider_width.val)
         self.update(None)
 
 

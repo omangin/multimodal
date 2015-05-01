@@ -220,11 +220,11 @@ class MotionDatabase:
             np.savetxt(os.path.join(data_dir, str(i) + '.txt'), ad)
 
     def print_info(self):
-        print ("Each data example is a (%s) array." % ', '.join(
+        print("Each data example is a (%s) array." % ', '.join(
             ['T'] + [str(i) for i in self.get_data_dimension()]
             ))
-        print "The second dimension corresponds to markers:"
-        print "\t- %s" % '\n\t- '.join(self.marker_names)
+        print("The second dimension corresponds to markers:")
+        print("\t- %s" % '\n\t- '.join(self.marker_names))
 
     @classmethod
     def load_from_npz(cls, location, verbose=False):
@@ -255,8 +255,8 @@ class MotionDatabase:
             l = r['labels']  # list of labels as integers
             db.records.append((d, l))
         if verbose:
-            print ("Loaded %d examples for ``%s`` set."
-                    % (len(db.records), meta['name']))
+            print("Loaded %d examples for ``%s`` set." %
+                  (len(db.records), meta['name']))
             db.print_info()
         return db
 

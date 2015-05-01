@@ -32,7 +32,7 @@ class Logger(object):
                 )
 
     def log(self, msg):
-        print msg
+        print(msg)
 
     def new_run(self):
         self.exps.append({})

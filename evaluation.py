@@ -68,7 +68,7 @@ def scores_from_dists(dists, true_labels_0, true_labels_1=None, verbose=False):
     ok = [f == l for f, l in zip(found_labels_0, true_labels_0)]
     result = np.average(ok)
     if verbose:
-        print result
+        print(result)
     return result
 
 

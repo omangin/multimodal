@@ -117,7 +117,7 @@ def gaussian_kde_2d(samples, h_x, h_y, nb_bins, fft=True, bounds=None):
     # TODO : ??? normalize 'by axis'
     s = np.sum(ker)
     if s == 0:
-        print 'Warning: window is too short...'
+        print('Warning: window is too short...')
     ker = ker / s
     # Do convolution
     if fft:

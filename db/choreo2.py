@@ -86,7 +86,7 @@ def build_features(db_file=None, feat_file=None, force=False,
     db = load(db_file=db_file)
     # Generate features
     if verbose:
-        print 'Computing histograms (may take a few minutes)...'
+        print('Computing histograms (may take a few minutes)...')
     X = db_to_VQ_hist_matrix(db, vel_delay=10, nb_bins=nb_bins)
     np.savez(feat_file, Xmotion=X)
     if verbose:

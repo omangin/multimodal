@@ -95,9 +95,10 @@ def load(dataset, data_path=None, verbose=False):
     for r in meta['records']:
         data.append(loaded_data[str(r['data-id'])])
         labels.append(r['labels'])
-    print "Loaded %d examples for ``%s`` database." % (len(data), meta['name'])
+    print("Loaded %d examples for ``%s`` database."
+          % (len(data), meta['name']))
     print("Each data example is a (T, %d, 3) array."
           % len(meta['marker-names']))
-    print "The second dimension corresponds to markers:"
-    print "\t- %s" % '\n\t- '.join(meta['marker-names'])
+    print("The second dimension corresponds to markers:")
+    print("\t- %s") % '\n\t- '.join(meta['marker-names'])
     return (data, labels, meta['marker-names'])

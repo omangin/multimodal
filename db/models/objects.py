@@ -156,17 +156,17 @@ class ObjectDB(object):
             except IOError, e:
                 skipped += 1
                 if verbosity is 'verbose':
-                    print "Skipping file %s (%s)" % (f.filename, e.strerror)
+                    print("Skipping file %s (%s)" % (f.filename, e.strerror))
             except WrongNumberOfFeatures:
                 skipped += 1
                 if verbosity is 'verbose':
                     print("Skipping file %s (wrong number of features)"
                           % f.filename)
         if skipped > 0 and verbosity is not 'silent':
-            print "Skipped %d files." % skipped
+            print("Skipped %d files." % skipped)
         for feat in FEATURES:
             if verbosity is not 'silent':
-                print "Grouping histograms by frame for %s features..." % feat
+                print("Grouping histograms by frame for %s features..." % feat)
             db._compute_histos_matrix_by_frame(feat)
         return db
 

@@ -34,10 +34,10 @@ OBJ_NAMES[32] = 'light green box'
 
 
 if os.path.exists(DB_FILE):
-    print ("Aborting, destination file exists (%s)." % DB_FILE)
+    print("Aborting, destination file exists (%s)." % DB_FILE)
 else:
     DB = ObjectDB.build_from(SOURCE_FILE, object_names=OBJ_NAMES,
                              verbosity='verbose')
     DB.save(os.path.abspath(os.path.dirname(DB_FILE)),
             os.path.basename(DB_FILE))
-    print ("Written: %s" % DB_FILE)
+    print("Written: %s" % DB_FILE)
