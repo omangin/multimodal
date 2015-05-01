@@ -1,5 +1,5 @@
-"""Usefull plot functions.
-Inspired (and somtime copied from http://olgabot.github.io/prettyplotlib/)
+"""Useful plot functions.
+Inspired (and sometime copied from http://olgabot.github.io/prettyplotlib/)
 Original author: Olga Botvinnik
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

@@ -1,3 +1,8 @@
+"""Helpers to generate associations of samples from different modalities with
+same labels.
+"""
+
+
 import random
 
 from .lib.window import concat_of_frames

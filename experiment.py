@@ -1,3 +1,6 @@
+"""Classes to run experiments in a consistent manner."""
+
+
 import os
 import json
 from datetime import datetime
@@ -96,7 +99,7 @@ class MultimodalExperiment(Experiment):
         self.data = [x[self.others, :] for x in self.data]
         self.labels_ex = [self.labels_all[i] for i in self.examples]
         self.labels = [self.labels_all[i] for i in self.others]
-    
+
     def prepare(self):
         # Log parameters
         params = self._parameters_to_dict()
@@ -293,16 +296,16 @@ class TwoModalitiesExperiment(MultimodalExperiment):
         width = 13
         table = " ".join(["{}" for _dummy in range(6)])
         print('-' * (width * 6 + 5))
-        print('Modalities'.center(width * 3 + 2)
-              + 'Score: avg (std)'.center(width * 3 + 2))
+        print('Modalities'.center(width * 3 + 2) +
+              'Score: avg (std)'.center(width * 3 + 2))
         print('-' * (width * 3 + 2) + ' ' + '-' * (width * 3 + 2))
         print(table.format(*[s.center(width)
                              for s in ['Test', 'Reference', 'Comparison',
                                        'KL', 'Euclidean', 'Cosine']]))
         print(' '.join(['-' * width] * 6))
         for mod1, mod2 in [(0, 1), (1, 0)]:
-            for mod_comp, mod_comp_str in ([(-1, 'internal')]
-                                           + list(enumerate(self.modalities))):
+            for mod_comp, mod_comp_str in ([(-1, 'internal')] +
+                                           list(enumerate(self.modalities))):
                 mod_str = [self.modalities[mod1].center(width),
                            self.modalities[mod2].center(width),
                            mod_comp_str.center(width)]
@@ -379,8 +382,8 @@ class ThreeModalitiesExperiment(MultimodalExperiment):
         width = 15
         table = " ".join(["{}" for _dummy in range(5)])
         print('-' * (width * 5 + 5))
-        print('Modalities'.center(width * 2 + 2)
-              + 'Score: avg (std)'.center(width * 3 + 2))
+        print('Modalities'.center(width * 2 + 2) +
+              'Score: avg (std)'.center(width * 3 + 2))
         print('-' * (width * 2 + 1) + ' ' + '-' * (width * 3 + 2))
         print(table.format(*[s.center(width)
                              for s in ['Test', 'Reference',

@@ -1,11 +1,7 @@
 # encoding: utf-8
 
 
-__author__ = 'Olivier Mangin <olivier.mangin@inria.fr>'
-__date__ = '01/2013'
-
-"""Helper class to evaluate learners from multiple modalities.
-"""
+"""Class to abstract learning from multiple modalities."""
 
 
 from .lib.nmf import KLdivNMF as NMF
@@ -41,7 +37,6 @@ class MultimodalLearner(object):
         if self.sparseness is not None:
             raise NotImplemented
         self.nmf_train = NMF(n_components=self.k, max_iter=iterations, tol=0)
-        #, sparseness=self.sparseness, sp_coef=self.sp_coef)
         self.nmf_train.fit(Vtrain, scale_W=True)
         self.dico = self.nmf_train.components_
 
@@ -71,7 +66,7 @@ class MultimodalLearner(object):
 
     def reconstruct_internal(self, orig_mod, test_data, iterations):
         return self.reconstruct_internal_multi([orig_mod], [test_data],
-                                                iterations)
+                                               iterations)
 
     def reconstruct_internal_multi(self, orig_mods, test_data, iterations):
         for mod, data in zip(orig_mods, test_data):
@@ -95,5 +90,5 @@ class MultimodalLearner(object):
     def modalities_to_modalities(self, orig_mods, dest_mods, test_data,
                                  iterations):
         internal = self.reconstruct_internal_multi(orig_mods, test_data,
-                                                iterations)
+                                                   iterations)
         return self.reconstruct_modalities(dest_mods, internal)

@@ -4,7 +4,7 @@
 from os.path import expanduser, join
 
 
-from .config import Config
+from .lib.config import Config
 
 
 CONFIG = Config()  # Initialize the configuration. This is required.
