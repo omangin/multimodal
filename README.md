@@ -39,7 +39,7 @@ Source files hierarchy:
 ###Experimental scripts
 - `experiments/icdl2013.py` Runs experiments and generate results corresponding to [Mangin2013][Mangin2013]. Uses *Acorns Caregiver* database for speech sounds as well as the *Choreo2* dataset.
 - `experiments/image_sound.py` Runs experiments similar to [Mangin2013][Mangin2013] with speech sounds from the *Acorns Caregiver* database and images from the *image database*.
-- `experiments/launcher.py` Script to run many experiments with variations of parameters. Requires [joblib](http://github.com/omangin/joblib) and some time or a cluster.
+- `experiments/launcher.py` Script to run many experiments with variations of parameters. Requires [expjobs](http://github.com/omangin/expjobs) and some time or a cluster.
 - `experiments/image_sound_eval_sliding_windows.py` Script to run experiments with speech sound and images in which the learner is evaluated on its recognition sound from small time windows.
 - `experiments/plot_image_sound_eval_sliding_windows.py` Interactive and static plots from the previous experiment.
 - `experiments/plot_info_matrix.py` Script to generate plot of the mutual information between sample labels and internal coefficients. The script re-uses a trained dictionary obtained from `launcher.py`.

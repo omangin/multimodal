@@ -113,7 +113,7 @@ def load_features(year, speaker, blacklist=False):
     Xsound = loadmat(feat_file)['hac']
     # CSR format, shape: (n, b)
     if blacklist:
-        all_records = range(Xsound.shape[0])
+        all_records = list(range(Xsound.shape[0]))
         for r in (BLACKLIST_Y1 if year == 1 else BLACKLIST_Y2)[speaker]:
             all_records.pop(r)
         Xsound = Xsound[all_records, :]

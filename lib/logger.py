@@ -42,9 +42,9 @@ class Logger(object):
 
     def store(self, key, value):
         if key in self.exps[-1]:
-            raise(ValueError,
-                  "There is already a value for this experiment for key: %s."
-                  % key)
+            raise ValueError(
+                "There is already a value for this experiment for key: %s."
+                % key)
         else:
             self.exp_keys.add(key)
             self.exps[-1][key] = value
@@ -78,7 +78,7 @@ class Logger(object):
 
     def save(self, compress=True):
         if self.filename is None:
-            raise(self.NoFileError, 'No file set for this logger.')
+            raise self.NoFileError('No file set for this logger.')
         else:
             to_save = {'glob': {},
                        'exps': [{} for e in self.exps],
@@ -107,7 +107,7 @@ class Logger(object):
     @classmethod
     def merge_experiments(cls, loggers):
         if len(loggers) == 0:
-            raise ValueError
+            raise ValueError()
         l0 = loggers[0]
         for l in loggers[1:]:
             l0.append_exps_from_other(l)

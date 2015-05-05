@@ -43,7 +43,7 @@ class MultimodalExperiment(Experiment):
     def __init__(self, loaders, k, iter_train, iter_test, coefs=None,
                  shuffle_labels=False, run_mode=.1, debug=False):
         super(MultimodalExperiment, self).__init__()
-        self.modalities = loaders.keys()
+        self.modalities = list(loaders.keys())
         self.loaders = [loaders[m] for m in self.modalities]
         self.k = k
         self.coefs = coefs
@@ -124,7 +124,7 @@ class MultimodalExperiment(Experiment):
             return leave_one_out(self.n_samples)
         elif self.run_mode == 'single':
             # Just take one split:
-            return iter([random_split(self.n_samples, .1).next()])
+            return iter([next(random_split(self.n_samples, .1))])
         else:
             return random_split(self.n_samples, self.run_mode)
 
@@ -155,7 +155,7 @@ class MultimodalExperiment(Experiment):
                                  self.coefs, self.k)
 
     def _perform_one_run(self):
-        train, test = self.run_generator.next()
+        train, test = next(self.run_generator)
         self.logger.new_run()
         self.logger.store('train', train)
         self.logger.store('test', test)
@@ -197,13 +197,13 @@ class MultimodalExperiment(Experiment):
     @classmethod
     def get_loader(cls, dataset, conf):
         if dataset == 'acorns':
-            from db.acorns import Year1Loader
+            from .db.acorns import Year1Loader
             cls = Year1Loader
         elif dataset == 'choreo2':
-            from db.choreo2 import Choreo2Loader
+            from .db.choreo2 import Choreo2Loader
             cls = Choreo2Loader
         elif dataset == 'objects':
-            from db.objects import ObjectsLoader
+            from .db.objects import ObjectsLoader
             cls = ObjectsLoader
         else:
             raise ValueError("Unknown dataset: %s!" % dataset)
@@ -236,9 +236,9 @@ class TwoModalitiesExperiment(MultimodalExperiment):
         transformed_data_ex = self._get_all_transformations(learner,
                                                             self.data_ex)
         # For each combination of modalities:
-        to_test = product(range(self.n_modalities),
-                          range(self.n_modalities),
-                          [-1] + range(self.n_modalities))
+        to_test = product(list(range(self.n_modalities)),
+                          list(range(self.n_modalities)),
+                          [-1] + list(range(self.n_modalities)))
         for (mod1, mod2, mod_cmp) in to_test:
             for metric, suffix in zip(
                     [kl_div, rev_kl_div, frobenius, cosine_diff],

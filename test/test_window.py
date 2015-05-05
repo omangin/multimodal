@@ -31,7 +31,7 @@ class TestToApproxInt(TestCase):
         self.assertIsInstance(_to_approx_int(3.14), int)
 
     def test_is_id_for_int(self):
-        l = range(-10, 10)
+        l = [x for x in range(-10, 10)]
         self.assertEqual([_to_approx_int(i) for i in l], l)
 
     def test_is_below(self):
@@ -65,12 +65,12 @@ class AbstractTestTimeWindow(object):
 
     def test_get_subwindow_times(self):
         subwin = self.win.get_subwindow(2.5, 3)
-        self.assertAlmostEquals(subwin.absolute_start, 2.5)
-        self.assertAlmostEquals(subwin.absolute_end, 3.)
+        self.assertAlmostEqual(subwin.absolute_start, 2.5)
+        self.assertAlmostEqual(subwin.absolute_end, 3.)
 
     def test_get_subwindow_returns_empty(self):
         subwin = self.win.get_subwindow(3.5, 2.5)
-        self.assertEquals(subwin.duration(), 0)
+        self.assertEqual(subwin.duration(), 0)
 
 
 class TestBasicTimeWindow(AbstractTestTimeWindow, TestCase):
@@ -86,31 +86,32 @@ class TestArrayTimeWindow(AbstractTestTimeWindow, TestCase):
 
     def test_get_subwindow_times(self):
         subwin = self.win.get_subwindow(2.5, 3)
-        self.assertAlmostEquals(subwin.absolute_start, 2.6)
-        self.assertAlmostEquals(subwin.absolute_end, 3.)
+        self.assertAlmostEqual(subwin.absolute_start, 2.6)
+        self.assertAlmostEqual(subwin.absolute_end, 3.)
         subwin = self.win.get_subwindow(2.4, 3)
-        self.assertAlmostEquals(subwin.absolute_start, 2.4)
-        self.assertAlmostEquals(subwin.absolute_end, 3.)
+        self.assertAlmostEqual(subwin.absolute_start, 2.4)
+        self.assertAlmostEqual(subwin.absolute_end, 3.)
         subwin = self.win.get_subwindow(2.4, 3.2)
-        self.assertAlmostEquals(subwin.absolute_start, 2.4)
-        self.assertAlmostEquals(subwin.absolute_end, 3.2)
+        self.assertAlmostEqual(subwin.absolute_start, 2.4)
+        self.assertAlmostEqual(subwin.absolute_end, 3.2)
 
     def test_get_subwindow_ok(self):
         subwin = self.win.get_subwindow(2.5, 3)
-        self.assertEquals(subwin.array, range(17, 15, -1))
+        self.assertEqual(subwin.array, range(17, 15, -1))
         subwin = self.win.get_subwindow(2.4, 3)
-        self.assertEquals(subwin.array, range(18, 15, -1))
+        self.assertEqual(subwin.array, range(18, 15, -1))
         subwin = self.win.get_subwindow(2.4, 3.2)
-        self.assertEquals(subwin.array, range(18, 14, -1))
+        self.assertEqual(subwin.array, range(18, 14, -1))
 
     def test_concatenate(self):
         win2 = ArrayTimeWindow(range(5), 4., 5.)
         win = ArrayTimeWindow.concatenate([self.win, win2])
-        self.assertEquals(win.absolute_start, 2.)
-        self.assertEquals(win.absolute_end, 5.)
-        self.assertEquals(win.duration(), 3.)
+        self.assertEqual(win.absolute_start, 2.)
+        self.assertEqual(win.absolute_end, 5.)
+        self.assertEqual(win.duration(), 3.)
         np.testing.assert_array_equal(win.array,
-                                      np.array(range(20, 10, -1) + range(5)))
+                                      np.array(list(range(20, 10, -1)) +
+                                               list(range(5))))
 
 
 class WavTestCase(TestCase):
@@ -202,7 +203,7 @@ class TestConcatTimeWindow(TestCase):
     def test_get_file_index_from_time(self):
         with self.assertRaises(TimeOutOfBound):
             self.win._get_file_index_from_time(9.)
-        self.assertEquals(self.win._get_file_index_from_time(
+        self.assertEqual(self.win._get_file_index_from_time(
             self.win.absolute_end - 0.001),
             len(self.wins) - 1)
 
@@ -212,8 +213,8 @@ class TestConcatTimeWindow(TestCase):
             ConcatTimeWindow(self.wins)
 
     def test_absolute_bounds(self):
-        self.assertAlmostEquals(self.win.absolute_start, 2.)
-        self.assertAlmostEquals(self.win.absolute_end, 7.)
+        self.assertAlmostEqual(self.win.absolute_start, 2.)
+        self.assertAlmostEqual(self.win.absolute_end, 7.)
 
     def test_get_subwindow(self):
             # all
@@ -254,14 +255,14 @@ class TestConcatTimeWindow(TestCase):
 
     def test_to_array_window(self):
         win = ConcatTimeWindow(self.wins[1:])
-        values = np.array(range(10) + range(20))
+        values = np.array(list(range(10)) + list(range(20)))
         subwin = win.get_subwindow(4., 7.)
         np.testing.assert_array_equal(win.to_array_window().array, values)
         np.testing.assert_array_equal(subwin.to_array_window().array, values)
 
     def test_to_array_sub_window(self):
         subwin = self.win.get_subwindow(4.79, 5.49)
-        values = np.array(range(8, 10) + range(4))
+        values = np.array(list(range(8, 10)) + list(range(4)))
         np.testing.assert_array_equal(subwin.to_array_window().array, values)
 
 
@@ -272,13 +273,13 @@ class TestConcatWavFileTimeWindow(WavTestCase):
         self.win = concat_from_list_of_wavs(self.files)
 
     def test_wav_load(self):
-        self.assertEquals(self.win.absolute_end, self.win.absolute_start + 10)
-        self.assertEquals(self.win.windows[0].rate, WAV_RATE)
+        self.assertEqual(self.win.absolute_end, self.win.absolute_start + 10)
+        self.assertEqual(self.win.windows[0].rate, WAV_RATE)
 
     def test_get_file_index_from_time(self):
         with self.assertRaises(TimeOutOfBound):
             self.win._get_file_index_from_time(self.win.absolute_start + 11)
-        self.assertEquals(self.win._get_file_index_from_time(
+        self.assertEqual(self.win._get_file_index_from_time(
             self.win.absolute_end - 0.001),
             len(self.files) - 1)
 
@@ -307,8 +308,8 @@ class TestConcatWavFileTimeWindow(WavTestCase):
             3 * np.ones(WAV_RATE * 3),
             4 * np.ones(4 * WAV_RATE)])
         time = np.array(range(10 * WAV_RATE))
-        sub_values = all_values[np.nonzero((time >= .1 * WAV_RATE)
-                                           * (time + 1 <= 7.3 * WAV_RATE))]
+        sub_values = all_values[np.nonzero((time >= .1 * WAV_RATE) *
+                                           (time + 1 <= 7.3 * WAV_RATE))]
         np.testing.assert_array_equal(win.to_array_window().array, sub_values)
 
 
@@ -318,15 +319,15 @@ class Testslider(TestCase):
         slider1 = slider(1., 5., 2., 2.)
         slider2 = slider(1., 5., 2., 2., partial=True)
         ok = [(1., 3.), (3., 5.)]
-        self.assertEquals(slider1, ok)
-        self.assertEquals(slider2, ok)
+        self.assertEqual(slider1, ok)
+        self.assertEqual(slider2, ok)
 
     def test_frames(self):
         slider1 = slider(0., 5., 2., 2.)
         slider2 = slider(0., 5., 2., 2., partial=True)
         ok = [(0., 2.), (2., 4.)]
-        self.assertEquals(slider1, ok)
-        self.assertEquals(slider2, ok + [(4., 5.)])
+        self.assertEqual(slider1, ok)
+        self.assertEqual(slider2, ok + [(4., 5.)])
 
     def test_simple_overlap(self):
         slider1 = slider(1., 5., 2., 2. / 3.)
@@ -381,8 +382,8 @@ class TestConcatOfFrames(TestCase):
     def test_against_old_concat_of_frames(self):
         win = concat_of_frames(self.t_start, self.t_end, self.rate)
         old_win = self.old_concat_of_frames()
-        self.assertEquals(win.absolute_start, old_win.absolute_start)
-        self.assertEquals(win.absolute_end, old_win.absolute_end)
+        self.assertEqual(win.absolute_start, old_win.absolute_start)
+        self.assertEqual(win.absolute_end, old_win.absolute_end)
         np.testing.assert_allclose([w.absolute_start for w in win.windows],
                                    [w.absolute_start for w in old_win.windows])
         np.testing.assert_allclose([w.absolute_end for w in win.windows],

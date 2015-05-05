@@ -73,7 +73,7 @@ class TestNNEvaluation(unittest.TestCase):
 class TestChoseExamples(unittest.TestCase):
 
     def setUp(self):
-        self.label_set = range(3)
+        self.label_set = list(range(3))
         self.labels = self.label_set * 5
         np.random.seed(0)
         np.random.shuffle(self.labels)

@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-
-__author__ = 'Olivier Mangin'
-__date__ = '03/2011'
-
 """Various (rather quick and dirty) filtering utility.
 """
 
@@ -131,7 +126,7 @@ def delayed_velocities(delay, positions, padding='circular'):
 # Tools to split between train and test sets (for cross-validation, etc.)
 def random_split(n_samples, ratio):
     nb_test = int(ratio * n_samples)
-    indices = range(n_samples)
+    indices = list(range(n_samples))
     np.random.shuffle(indices)
     # Generate train and test sets
     for i in range(0, nb_test * int(1. / ratio), nb_test):
@@ -143,6 +138,5 @@ def random_split(n_samples, ratio):
 def leave_one_out(n_samples):
     for i in range(n_samples):
         # Generate train and test set
-        train = range(n_samples)
-        train.remove(i)
+        train = [j for j in range(n_samples) if j != i]
         yield train, [i]

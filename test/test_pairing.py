@@ -1,5 +1,4 @@
 from unittest import TestCase, skip
-import random
 
 from multimodal.lib.window import BasicTimeWindow, ConcatTimeWindow
 from multimodal.pairing import (associate, flatten, organize_by_values,
@@ -17,8 +16,8 @@ class TestVar(TestCase):
         self.assertEqual(associate(l), assoc)
 
     def test_flatten(self):
-        l = [range(4), range(4, 10), range(10, 15)]
-        self.assertEqual(flatten(l), range(15))
+        l = [list(range(4)), list(range(4, 10)), list(range(10, 15))]
+        self.assertEqual(flatten(l), list(range(15)))
 
     def test_organize_by_values(self):
         l = [0, 0, 1, 1, 0, 2, 1]
@@ -53,14 +52,18 @@ class TestModalityAssociation(TestCase):
         self.assertEqual([names[1][l] for l in labels],
                          [self.sets[1][x[1]] for x in assocs])
 
-    def test_labels_shuffled(self):
-        random.seed(0)
+    def test_labels_match_origin_shuffled(self):
         names, labels, assocs = associate_samples(self.sets, shuffle=True)
         self.assertEqual([names[0][l] for l in labels],
                          [self.sets[0][x[0]] for x in assocs])
         self.assertEqual([names[1][l] for l in labels],
                          [self.sets[1][x[1]] for x in assocs])
-        self.assertEquals(names, ([1, 2, 3], ['6', '5', '4']))
+
+    def test_labels_shuffled(self):
+        # May fail from time to time...
+        names1, labels1, assocs1 = associate_samples(self.sets)
+        names2, labels2, assocs2 = associate_samples(self.sets, shuffle=True)
+        self.assertNotEqual(names1, names2)
 
     @skip("Too long to run each time but good to have!")
     def test_labels_match_on_db(self):
@@ -103,11 +106,11 @@ class TestWindowedAssociation(TestCase):
     def test_associate_to_windows(self):
         win = associate_to_window(get_win(self.sets[0], [1.8, 3.1, 1.05]),
                                   range(6), self.sets[1], 1.)
-        self.assertEquals([self.sets[1][w.obj] for w in win.windows],
+        self.assertEqual([self.sets[1][w.obj] for w in win.windows],
                           [0, 0, 1, 1, 1, 0])
 
     def test_associate_to_windows_reverse_indices(self):
         win = associate_to_window(get_win(self.sets[0], [1.8, 3.1, 1.05]),
                                   range(6)[::-1], self.sets[1][::-1], 1.)
-        self.assertEquals([self.sets[1][w.obj] for w in win.windows],
+        self.assertEqual([self.sets[1][w.obj] for w in win.windows],
                           [0, 0, 1, 1, 1, 0])

@@ -47,8 +47,8 @@ class AlternateTree:
                 s = [u for (u, is_in) in enumerate(self.S) if is_in]
                 t = [v for (v, is_in) in enumerate(self.T) if not is_in]
                 alpha = np.min(slacks[s, :][:, t])
-                argmins = np.nonzero(slacks == alpha)
-                    # As two separate lists of indices
+                argmins = np.nonzero(slacks == alpha)  # As two separate lists
+                # of indices
                 argmins = zip(argmins[0], argmins[1])  # As one list of couples
                 # Update labels
                 for i in range(self.bg.n):
@@ -86,9 +86,9 @@ class BipartiteGraph:
         return self.labels[0][u] + self.labels[1][v] - self.w[u, v]
 
     def slack_matrix(self):
-        return (np.array(self.labels[0])[:, np.newaxis]
-                + np.array(self.labels[1])[np.newaxis, :]
-                - self.w)
+        return (np.array(self.labels[0])[:, np.newaxis] +
+                np.array(self.labels[1])[np.newaxis, :] -
+                self.w)
 
     def neighbours_in_G_l(self, u):
         # u belongs to first part of the graph
@@ -183,7 +183,7 @@ def all_perms(l):
     else:
         for perm in all_perms(l[1:]):
             for i in range(len(l)):
-                yield perm[:i] + [l[0]] + perm[i:]
+                yield list(perm[:i]) + [l[0]] + list(perm[i:])
 
 
 def min_weight_perm_brute_force(w):

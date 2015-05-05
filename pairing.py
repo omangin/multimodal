@@ -17,8 +17,8 @@ def named_labels_to_range(sample_labels, shuffle=False):
 
 
 def associate_labels(labels_by_modality, shuffle=False):
-    return zip(*[named_labels_to_range(l, shuffle=shuffle)
-                 for l in labels_by_modality])
+    return list(zip(*[named_labels_to_range(l, shuffle=shuffle)
+                      for l in labels_by_modality]))
 
 
 def organize_by_values(l, nb_values=None, indices=None):
@@ -33,7 +33,7 @@ def organize_by_values(l, nb_values=None, indices=None):
 
 def associate(l):
     # buckets_tuple: one bucket for each modality grouped in a tuple
-    return [zip(*buckets_tuple) for buckets_tuple in zip(*l)]
+    return [list(zip(*buckets_tuple)) for buckets_tuple in zip(*l)]
 
 
 def flatten(l):

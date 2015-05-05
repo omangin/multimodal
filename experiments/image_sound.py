@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-# coding: utf-8
+#!/usr/bin/env python
 
 
 """Experiment for image and sound corresponding to icdl2013.py.

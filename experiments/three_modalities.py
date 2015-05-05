@@ -1,13 +1,12 @@
-#!/usr/bin/env python2
-# coding: utf-8
+#!/usr/bin/env python
 
 
 """Runner script for TwoModalitiesExperiment.
-For use with joblib.
+For use with expjobs.
 """
 
 
-from joblib.helpers import run_class
+from expjobs.helpers import run_class
 
 from multimodal.experiment import ThreeModalitiesExperiment
 

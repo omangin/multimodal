@@ -39,7 +39,7 @@ def _scale(matrix, factors, axis=0):
         raise ValueError(
                 "Wrong array shape: %s, should have only 2 dimensions."
                 % str(matrix.shape))
-    if not axis in (0, 1):
+    if axis not in (0, 1):
         raise ValueError('Wrong axis, should be 0 (scaling lines)\
                 or 1 (scaling columns).')
     # Transform factors given as columne shaped matrices
@@ -150,8 +150,8 @@ class KLdivNMF(object):
             H_init = normalize_sum(np.abs(np.random.random(
                 (self.n_components, n_features))) + .01, axis=1)
         else:
-            assert(self._init_dictionary.shape
-                   == (self.n_components, n_features))
+            assert(self._init_dictionary.shape ==
+                   (self.n_components, n_features))
             H_init = self._init_dictionary
         W_init = X.dot(H_init.T)
         return W_init, H_init
@@ -209,7 +209,7 @@ class KLdivNMF(object):
         if return_errors:
             errors = []
 
-        for n_iter in xrange(1, self.max_iter + 1):
+        for n_iter in range(1, self.max_iter + 1):
             # Stopping condition
             error = self.error(X, W, self.components_, weights=weights)
             if prev_error - error < tol:
