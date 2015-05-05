@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 
 import os
@@ -6,10 +6,10 @@ import time
 import argparse
 from collections import OrderedDict
 
-from joblib import status
-from joblib.job import Job
-from joblib.process import MultiprocessPool
-from joblib.torque import TorquePool, has_qsub
+from expjobs import status
+from expjobs.job import Job
+from expjobs.process import MultiprocessPool
+from expjobs.torque import TorquePool, has_qsub
 
 from multimodal.experiment import (TwoModalitiesExperiment,
                                    ThreeModalitiesExperiment)
@@ -100,11 +100,11 @@ exps_3 = [("image_motion_sound_{}_{}".format(k, i),
 
 image_features = ['SURF', 'color', 'SURF_pairs', 'color_pairs',
                   'color_triplets']
-descriptor_sets = ([[f] for f in image_features]
-                   + [['SURF', 'color'],
-                      ['SURF_pairs', 'color_pairs'],
-                      ['SURF_pairs', 'color_triplets'],
-                      image_features]
+descriptor_sets = ([[f] for f in image_features] +
+                   [['SURF', 'color'],
+                    ['SURF_pairs', 'color_pairs'],
+                    ['SURF_pairs', 'color_triplets'],
+                    image_features]
                    )
 exp_images = [("image_sound_feats_{}_{}".format('_'.join(descriptors), i),
                TwoModalitiesExperiment(

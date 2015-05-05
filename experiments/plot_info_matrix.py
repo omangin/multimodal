@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from joblib.job import Job
+from expjobs.job import Job
 
 from multimodal.pairing import organize_by_values
 from multimodal.experiment import ThreeModalitiesExperiment
@@ -47,12 +47,12 @@ DEFAULT_PARAMS = {
     }
 
 exps = [("image_motion_sound_{}_{}".format(K, i),
-           ThreeModalitiesExperiment(
-               {'image': ObjectsLoader(['SURF', 'color']),
-                'motion': Choreo2Loader(),
-                'sound': AcornsLoader(1)},
-               K, 50, 50, **DEFAULT_PARAMS)
-           ) for i in range(N_RUN)]
+         ThreeModalitiesExperiment(
+            {'image': ObjectsLoader(['SURF', 'color']),
+             'motion': Choreo2Loader(),
+             'sound': AcornsLoader(1)},
+            K, 50, 50, **DEFAULT_PARAMS)
+         ) for i in range(N_RUN)]
 
 jobs = [Job(WORKDIR, n, SCRIPT3) for n, e in exps]
 
@@ -78,8 +78,9 @@ def _sum_all_but_i(a, i):
     mask[i, :] = False
     return (a * mask).sum(axis=0)
 
+
 def mutual_information_by_label(internal_values, by_labels_idx):
-    """Compute information matrix for the joint ditribution
+    """Compute information matrix for the joint distribution
     over the internal coefficient values and the presence of the label,
     for each label.
     """

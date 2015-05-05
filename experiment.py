@@ -197,13 +197,13 @@ class MultimodalExperiment(Experiment):
     @classmethod
     def get_loader(cls, dataset, conf):
         if dataset == 'acorns':
-            from db.acorns import Year1Loader
+            from .db.acorns import Year1Loader
             cls = Year1Loader
         elif dataset == 'choreo2':
-            from db.choreo2 import Choreo2Loader
+            from .db.choreo2 import Choreo2Loader
             cls = Choreo2Loader
         elif dataset == 'objects':
-            from db.objects import ObjectsLoader
+            from .db.objects import ObjectsLoader
             cls = ObjectsLoader
         else:
             raise ValueError("Unknown dataset: %s!" % dataset)
