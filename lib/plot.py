@@ -19,8 +19,21 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import colorConverter
 
 
-NavyBlue = '#006EB8'
-Red = '#ED1B23'
+BLUE = '#2463a4'
+RED = '#ED1B23'
+
+TEN_COLORS = [
+    "#3989d4",
+    "#ffad4c",
+    "#ff728d",
+    "#a8efa0",
+    "#a0c2fc",
+    "#eba7f7",
+    "#ffd1af",
+    "#ffff2d",  # Darker from yellow: "#ffff90",
+    "#5ab578",
+    "#60708d",
+]
 
 
 def _cmap_from_data(x):
@@ -123,12 +136,12 @@ def boxplot(x, **kwargs):
     remove_chartjunk(ax, ['top', 'right', 'bottom'])
     linewidth = 0.75
 
-    plt.setp(bp['boxes'], color=NavyBlue, linewidth=linewidth)
-    plt.setp(bp['medians'], color=Red)
-    plt.setp(bp['whiskers'], color=NavyBlue, linestyle='solid',
+    plt.setp(bp['boxes'], color=BLUE, linewidth=linewidth)
+    plt.setp(bp['medians'], color=RED)
+    plt.setp(bp['whiskers'], color=BLUE, linestyle='solid',
              linewidth=linewidth)
-    plt.setp(bp['fliers'], color=NavyBlue)
-    plt.setp(bp['caps'], color=NavyBlue, linewidth=linewidth)
+    plt.setp(bp['fliers'], color=BLUE)
+    plt.setp(bp['caps'], color=BLUE, linewidth=linewidth)
     ax.spines['left']._linewidth = 0.5
     return bp
 
@@ -197,7 +210,7 @@ def remove_chartjunk(ax, spines, grid=None, ticklabels=None):
     if grid is not None:
         for g in grid:
             assert g in ('x', 'y')
-            ax.grid(axis=grid, color='white', linestyle='-', linewidth=0.5)
+        ax.grid(axis=grid, color='white', linestyle='-', linewidth=0.5)
 
     if ticklabels is not None:
         if type(ticklabels) is str:

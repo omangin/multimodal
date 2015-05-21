@@ -8,7 +8,7 @@ from multimodal.lib.logger import Logger
 from multimodal.lib.window import (BasicTimeWindow, ConcatTimeWindow,
                                    concat_from_list_of_wavs,
                                    slider)
-from multimodal.lib.plot import get_n_colors
+from multimodal.lib.plot import TEN_COLORS
 from multimodal.db.acorns import Year1Loader as AcornsLoader
 from multimodal.plots import InteractivePlot, plot_one_sentence
 
@@ -17,7 +17,7 @@ WIDTH = .5
 SHIFT = .1
 
 WORKDIR = os.path.expanduser('~/work/data/results/quick/')
-COLORS = get_n_colors(10, color_map=plt.pyplot.get_cmap('spectral'))
+COLORS = TEN_COLORS
 
 sound_loader = AcornsLoader(1)
 

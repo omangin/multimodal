@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.widgets import Slider
 
-from .lib.plot import plot, boxplot, plot_var, legend
+from .lib.plot import plot, boxplot, plot_var, legend, TEN_COLORS
 from .lib.window import (BasicTimeWindow, ConcatTimeWindow, TimeOutOfBound)
 
 
@@ -14,12 +14,12 @@ COLORS = {'motion': '#006EB8',
           'sound': '#3C8031',
           }
 
-PAIRS_COLORS = {('image', 'motion'): '#006EB8',
-                ('motion', 'image'): 'orange',
-                ('image', 'sound'): '#3C8031',
-                ('sound', 'image'): 'violet',
-                ('motion', 'sound'): 'Red',
-                ('sound', 'motion'): '#FBB982',
+PAIRS_COLORS = {('image', 'motion'): TEN_COLORS[0],
+                ('motion', 'image'): TEN_COLORS[1],
+                ('motion', 'sound'): TEN_COLORS[2],
+                ('sound', 'motion'): TEN_COLORS[3],
+                ('image', 'sound'): TEN_COLORS[4],
+                ('sound', 'image'): TEN_COLORS[5],
                 }
 
 SCORE_NAME = 'Cross-modal association success rate'
@@ -115,7 +115,7 @@ def plot_boxes_one_exp(logger, mods_to_mods, colors=None, xticks=False):
     for box, mods in zip(boxes, mods_to_mods):
         coords = zip(box.get_xdata(), box.get_ydata())
         fcolor = get_color_for_modalities(*mods, colors=colors)
-        p = plt.Polygon(coords, facecolor=fcolor, alpha=.8)
+        p = plt.Polygon(coords, facecolor=fcolor)
         ax.add_patch(p)
         polygons.append(p)
     labels = ['{} $\\rightarrow$ {}'.format(', '.join(mod1), ', '.join(mod2))
