@@ -1,10 +1,6 @@
 # encoding: utf-8
 
 
-__author__ = 'Olivier Mangin <olivier.mangin@inria.fr>'
-__date__ = '08/2012'
-
-
 """Choerography dataset v2.
 
     More information can be found at:
@@ -17,20 +13,24 @@ import os
 import numpy as np
 
 from ..local import CONFIG
+from ..lib.net import check_destination_path, urlretrieve
 from .models.kinect_motion import MotionDatabase
 from .models.loader import Loader
 from ..features.angle_histograms import db_to_VQ_hist_matrix
 
 
 DEFAULT_NB_BINS = 15  # Used to build features
+SRC = 'http://olivier.mangin.com/data/choreo2/'
+DEFAULT_META_FILE_NAME = 'choreo2.json'
+DEFAULT_FEATURES_FILE_NAME = 'choreo2_angle_hist.npz'
 
 
 def default_db_file():
-    return os.path.join(CONFIG['db-dir'], 'choreo2', 'choreo2.json')
+    return os.path.join(CONFIG['db-dir'], 'choreo2', DEFAULT_META_FILE_NAME)
 
 
 def get_default_feature_file():
-    return os.path.join(CONFIG['feat-dir'], 'choreo2_angle_hist.npz')
+    return os.path.join(CONFIG['feat-dir'], DEFAULT_FEATURES_FILE_NAME)
 
 
 # Load motion DB and features
@@ -91,3 +91,39 @@ def build_features(db_file=None, feat_file=None, force=False,
     np.savez(feat_file, Xmotion=X)
     if verbose:
         print("Motion features generated and saved to: %s." % feat_file)
+
+
+def download_meta(dest=None):
+    """Downloads description and features of the dataset."""
+    if dest is None:
+        file_ = default_db_file()
+        dest = os.path.dirname(file_)
+        name = os.path.basename(file_)
+    else:
+        name = DEFAULT_META_FILE_NAME
+    file_ = check_destination_path(dest, name)
+    urlretrieve(SRC + name, file_)
+
+
+def download(dest=None):
+    """Downloads description and features of the dataset."""
+    if dest is None:
+        file_ = default_db_file()
+        dest = os.path.dirname(file_)
+        name, _ = os.path.splitext(os.path.basename(file_))
+    else:
+        name, _ = os.path.splitext(DEFAULT_META_FILE_NAME)
+    urlretrieve(SRC + name + '.json',
+                check_destination_path(dest, name + '.json'))
+    urlretrieve(SRC + name + '.npz',
+                check_destination_path(dest, name + '.npz'))
+
+
+def download_with_features(meta_dest=None, features_dest=None):
+    """Downloads description and features of the dataset."""
+    download(dest=meta_dest)
+    if features_dest is None:
+        features_dest = CONFIG['feat-dir']
+    features_name = DEFAULT_FEATURES_FILE_NAME
+    features_file = check_destination_path(features_dest, features_name)
+    urlretrieve(SRC + features_name, features_file)

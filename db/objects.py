@@ -1,10 +1,6 @@
 # encoding: utf-8
 
 
-__author__ = 'Olivier Mangin <olivier.mangin@inria.fr>'
-__date__ = '09/2013'
-
-
 """Objects dataset, provided by Natalia Lyubova.
    (www.ensta-paristech.fr/~lyubova).
 
@@ -22,6 +18,7 @@ from .models.objects import ObjectDB
 from .models.loader import Loader
 from ..local import CONFIG
 from ..lib.array_utils import safe_hstack
+from ..lib.net import check_destination_path, urlretrieve
 
 
 DEFAULT_LABELS = [
@@ -36,6 +33,7 @@ DEFAULT_LABELS = [
     'mouse?',
     'dark green and white cube',
     ]
+SRC = 'http://olivier.mangin.com/data/objects/'
 
 
 def get_default_db_file(extension=True):
@@ -74,7 +72,7 @@ class ObjectsLoader(Loader):
             # Filter indices
             self._keep_idx = [i for i, f in enumerate(self.db.frames)
                               if self.db.object_names[f.label]
-                                in self.labels_to_keep]
+                              in self.labels_to_keep]
         return self._keep_idx
 
     def get_data(self):
@@ -110,3 +108,15 @@ def load_features(features, db_file, db=None):
     if db is None:
         db = load(db_file=db_file)
     return safe_hstack([db.get_histos_matrix_by_frame(f) for f in features])
+
+
+def download_meta_and_features(dest):
+    file_ = get_default_db_file(False)
+    default_dest = os.path.dirname(file_)
+    name = os.path.basename(file_)
+    if dest is None:
+        dest = default_dest
+    meta_file = check_destination_path(dest, name + '.json')
+    urlretrieve(SRC + name + '.json', meta_file)
+    features_file = check_destination_path(dest, name + '.mat')
+    urlretrieve(SRC + name + '.mat', features_file)

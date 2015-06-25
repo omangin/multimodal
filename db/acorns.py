@@ -1,10 +1,6 @@
 # encoding: utf-8
 
 
-__author__ = 'Olivier Mangin <olivier.mangin@inria.fr>'
-__date__ = '08/2012'
-
-
 """ACORNS CAREGIVER database.
 """
 
@@ -14,6 +10,7 @@ import os
 from scipy.io import loadmat
 
 from ..local import CONFIG
+from ..lib.net import check_destination_path, urlretrieve
 from ..features.hac import build_codebooks_from_list_of_wav
 from .models.loader import Loader
 from .models.acorns import AcornsDB, check_year
@@ -21,6 +18,9 @@ from .models.acorns import AcornsDB, check_year
 
 BLACKLIST_Y1 = [[], [176], [], []]  # Bad records (no label, empty, etc.)
 BLACKLIST_Y2 = [[]] * 10
+
+SRC = 'http://olivier.mangin.com/data/acorns-caregiver/'
+ALL_SPEAKERS = [list(range(0, 4)), list(range(0, 10))]
 
 
 def default_acorns_dir():
@@ -128,3 +128,18 @@ def build_acorns_codebook(ks):
         all_records.extend(sum(db.records, []))
     return build_codebooks_from_list_of_wav(
         [r.get_audio_path() for r in all_records], ks)
+
+
+def download_meta_and_features(year, meta_dest=None, features_dest=None):
+    """Downloads description and features of the dataset."""
+    if meta_dest is None:
+        meta_dest = default_acorns_dir()
+    meta_name = default_acorns_file(year)
+    meta_file = check_destination_path(meta_dest, meta_name)
+    urlretrieve(SRC + meta_name, meta_file)
+    if features_dest is None:
+        features_dest = CONFIG['feat-dir']
+    for speaker in ALL_SPEAKERS[year - 1]:
+        features_name = feature_file_name(year, speaker)
+        features_file = check_destination_path(features_dest, features_name)
+        urlretrieve(SRC + features_name, features_file)
