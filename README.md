@@ -15,9 +15,26 @@ Usage
 This code is intended to work on its own. It however requires the dependencies mentioned below to be installed and available on the operating system. Please note the following elements.
 
 - **Locations:** The file *local.py* is meant to hold local configuration of paths to data, features, etc. A template is provided in the repository. The paths defined in that file are only used when no path argument is provided to related functions (for examples the dataset loaders, or feature generators).
-- **Data:** The experimental scripts require data (see below). This data must be accessible from the script and eventually pre-processed. For the motion data, pre-processing can be achieved through *multimodal/db/scripts/build_choreo2_features*. Alternatively, all features and metadata for the databases can be downloaded by running *multimodal/db/scripts/download_dbs*. This removes the need to pre-process the *choreo2* dataset.
+- **Data:** The experimental scripts require data (see below). This data must be accessible from the script and eventually pre-processed. For the motion data, pre-processing can be achieved through `multimodal/db/scripts/build_choreo2_features`. Alternatively, all features and metadata for the databases can be downloaded by running `multimodal/db/scripts/download_dbs`. This removes the need to pre-process the *choreo2* dataset.
 - **Experiments:** Just run the experimental script. Be sure to generate the required features. For the moment, the ACORNS Caregiver dataset is not available online, however feature files can be provided on request.
 
+So for a quick hand on, just:
+
+1. Install dependencies:
+
+    `pip install numpy scipy matplotlib librosa`
+
+2. Download the sources:
+
+    `git clone http://github.com/omangin/multimodal.git`
+
+3. Download databases features and metadata (from where you downloaded the repository):
+
+    `./multimodal/db/scripts/download_dbs`
+
+4. Reproduce [Mangin2013's][Mangin2013] experiment:
+
+    `./multimodal/experiments/icdl2013.py`
 
 
 Source files hierarchy:
@@ -47,10 +64,10 @@ Source files hierarchy:
 
 Data
 ----
-- **Acorns Caregiver** is not available online. However, feature and meta files can be downloaded (see the *download_meta_and_features* function in *db/acorns.py* or use *multimodal/db/scripts/download_dbs*).
+- **Acorns Caregiver** is not available online. However, feature and meta files can be downloaded (see the *download_meta_and_features* function in `db/acorns.py` or use `multimodal/db/scripts/download_dbs`).
 - **Choreo1** can be found at [flowers.inria.fr/choreo/doc](https://flowers.inria.fr/choreo/doc/index.html)
 - **Choreo2** can be found at [flowers.inria.fr/choreo2](https://flowers.inria.fr/choreo2/index.html)
-- **Object images** (not publicly available yet). Pictures acquired by [Natalia Lyubova and David Filliat][Lyubova2012] as frames from interaction with an iCub robot, through an RGBD sensor (red, green, and blue camera coupled with a depth sensor). Feature and meta files can be downloaded (see the *download_meta_and_features* function in *db/objects.py* or use *multimodal/db/scripts/download_dbs*).
+- **Object images** (not publicly available yet). Pictures acquired by [Natalia Lyubova and David Filliat][Lyubova2012] as frames from interaction with an iCub robot, through an RGBD sensor (red, green, and blue camera coupled with a depth sensor). Feature and meta files can be downloaded (see the *download_meta_and_features* function in `db/objects.py` or use `multimodal/db/scripts/download_dbs`).
 
 
 License
@@ -70,7 +87,7 @@ Plateform
 
 Requirements
 ------------
-- python 2.7
+- python >2.7 or >3
 - numpy
 - scipy
 - [librosa](http://github.com/bmcfee/librosa) (for sound feature computation)
