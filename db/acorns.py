@@ -130,16 +130,19 @@ def build_acorns_codebook(ks):
         [r.get_audio_path() for r in all_records], ks)
 
 
-def download_meta_and_features(year, meta_dest=None, features_dest=None):
+def download_meta_and_features(year, meta_dest=None, features_dest=None,
+                               overwrite=False):
     """Downloads description and features of the dataset."""
     if meta_dest is None:
         meta_dest = default_acorns_dir()
     meta_name = default_acorns_file(year)
-    meta_file = check_destination_path(meta_dest, meta_name)
+    meta_file = check_destination_path(meta_dest, meta_name,
+                                       overwrite=overwrite)
     urlretrieve(SRC + meta_name, meta_file)
     if features_dest is None:
         features_dest = CONFIG['feat-dir']
     for speaker in ALL_SPEAKERS[year - 1]:
         features_name = feature_file_name(year, speaker)
-        features_file = check_destination_path(features_dest, features_name)
+        features_file = check_destination_path(features_dest, features_name,
+                                               overwrite=overwrite)
         urlretrieve(SRC + features_name, features_file)

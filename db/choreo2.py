@@ -93,37 +93,43 @@ def build_features(db_file=None, feat_file=None, force=False,
         print("Motion features generated and saved to: %s." % feat_file)
 
 
-def download_meta(dest=None):
-    """Downloads description and features of the dataset."""
+def __get_dest(dest, extension=True):
     if dest is None:
         file_ = default_db_file()
         dest = os.path.dirname(file_)
         name = os.path.basename(file_)
     else:
         name = DEFAULT_META_FILE_NAME
-    file_ = check_destination_path(dest, name)
+    if not extension:
+        name, _ = os.path.splitext(name)
+    return dest, name
+
+
+def download_meta(dest=None, overwrite=False):
+    """Downloads description and features of the dataset."""
+    dest, name = __get_dest(dest, extension=True)
+    file_ = check_destination_path(dest, name, overwrite=overwrite)
     urlretrieve(SRC + name, file_)
 
 
-def download(dest=None):
+def download(dest=None, overwrite=False):
     """Downloads description and features of the dataset."""
-    if dest is None:
-        file_ = default_db_file()
-        dest = os.path.dirname(file_)
-        name, _ = os.path.splitext(os.path.basename(file_))
-    else:
-        name, _ = os.path.splitext(DEFAULT_META_FILE_NAME)
+    dest, name = __get_dest(dest, extension=False)
     urlretrieve(SRC + name + '.json',
-                check_destination_path(dest, name + '.json'))
+                check_destination_path(dest, name + '.json',
+                                       overwrite=overwrite))
     urlretrieve(SRC + name + '.npz',
-                check_destination_path(dest, name + '.npz'))
+                check_destination_path(dest, name + '.npz',
+                                       overwrite=overwrite))
 
 
-def download_with_features(meta_dest=None, features_dest=None):
+def download_with_features(meta_dest=None, features_dest=None,
+                           overwrite=False):
     """Downloads description and features of the dataset."""
-    download(dest=meta_dest)
+    download(dest=meta_dest, overwrite=overwrite)
     if features_dest is None:
         features_dest = CONFIG['feat-dir']
     features_name = DEFAULT_FEATURES_FILE_NAME
-    features_file = check_destination_path(features_dest, features_name)
+    features_file = check_destination_path(features_dest, features_name,
+                                           overwrite=overwrite)
     urlretrieve(SRC + features_name, features_file)

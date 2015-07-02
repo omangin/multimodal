@@ -110,13 +110,15 @@ def load_features(features, db_file, db=None):
     return safe_hstack([db.get_histos_matrix_by_frame(f) for f in features])
 
 
-def download_meta_and_features(dest):
+def download_meta_and_features(dest, overwrite=False):
     file_ = get_default_db_file(False)
     default_dest = os.path.dirname(file_)
     name = os.path.basename(file_)
     if dest is None:
         dest = default_dest
-    meta_file = check_destination_path(dest, name + '.json')
+    meta_file = check_destination_path(dest, name + '.json',
+                                       overwrite=overwrite)
     urlretrieve(SRC + name + '.json', meta_file)
-    features_file = check_destination_path(dest, name + '.mat')
+    features_file = check_destination_path(dest, name + '.mat',
+                                           overwrite=overwrite)
     urlretrieve(SRC + name + '.mat', features_file)
