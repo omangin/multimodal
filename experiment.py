@@ -5,6 +5,7 @@ import os
 import json
 from datetime import datetime
 from itertools import product
+from collections import OrderedDict
 
 import numpy as np
 
@@ -211,7 +212,7 @@ class MultimodalExperiment(Experiment):
 
     @classmethod
     def from_serialized(cls, serialized):
-        loaders = {}
+        loaders = OrderedDict()
         for m, (dataset, conf) in zip(serialized['modalities'],
                                       serialized['loaders']):
             loaders[m] = cls.get_loader(dataset, conf)
