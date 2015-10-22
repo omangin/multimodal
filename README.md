@@ -64,10 +64,10 @@ Source files hierarchy:
 
 Data
 ----
-- **Acorns Caregiver** is not available online. However, feature and meta files can be downloaded (see the *download_meta_and_features* function in `db/acorns.py` or use `multimodal/db/scripts/download_dbs`).
-- **Choreo1** can be found at [flowers.inria.fr/choreo/doc](https://flowers.inria.fr/choreo/doc/index.html)
-- **Choreo2** can be found at [flowers.inria.fr/choreo2](https://flowers.inria.fr/choreo2/index.html)
-- **Object images** (not publicly available yet). Pictures acquired by [Natalia Lyubova and David Filliat][Lyubova2012] as frames from interaction with an iCub robot, through an RGBD sensor (red, green, and blue camera coupled with a depth sensor). Feature and meta files can be downloaded (see the *download_meta_and_features* function in `db/objects.py` or use `multimodal/db/scripts/download_dbs`).
+- **Acorns Caregiver** is available [online](https://corpus1.mpi.nl/ds/asv/;jsessionid=0717131F4474EDF6A9002460E8921321?0&openhandle=hdl:1839/00-0000-0000-001A-D60B-1). Please refer to [the article by Bergmann et al.](http://dx.doi.org/10.1371/journal.pone.0132245) for permission. However, feature and metadata files can be downloaded through the code (see the *download_meta_and_features* function in `db/acorns.py` or use `multimodal/db/scripts/download_dbs`). See also [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.29600.svg)](http://dx.doi.org/10.5281/zenodo.29600).
+- **Choreo1** can be found at [flowers.inria.fr/choreo/doc](https://flowers.inria.fr/choreo/doc/index.html).
+- **Choreo2** can be found at [flowers.inria.fr/choreo2](https://flowers.inria.fr/choreo2/index.html). See also [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.29602.svg)](http://dx.doi.org/10.5281/zenodo.29602) for features.
+- **Object images** (not publicly available yet). Pictures acquired by [Natalia Lyubova and David Filliat][Lyubova2012] as frames from interaction with an iCub robot, through an RGBD sensor (red, green, and blue camera coupled with a depth sensor). Feature and meta files can be downloaded (see the *download_meta_and_features* function in `db/objects.py` or use `multimodal/db/scripts/download_dbs`). See also [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.29607.svg)](http://dx.doi.org/10.5281/zenodo.29607).
 
 
 License
