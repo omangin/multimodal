@@ -7,9 +7,11 @@ learning with nonnegative matrix factorization (NMF).*
 This repository contains code to reproduce the experiments from the
 publications:
 
-- O. Mangin, D. Filliat, L. ten Bosch, P.Y. Oudeyer, **MCA-NMF: Multimodal concept acquisition with non-negative matrix factorization** *PLOS ONE* (October 21, 2015) (more information: `[Mangin2015]`_, `bibtex <http://olivier.mangin.com/media/bibtex/Mangin2015.bib>`__)
+`[Mangin2015]`_
+  O\. Mangin, D. Filliat, L. ten Bosch, P.Y. Oudeyer, **MCA-NMF: Multimodal concept acquisition with non-negative matrix factorization** *PLOS ONE* (October 21, 2015) (`bibtex <http://olivier.mangin.com/media/bibtex/Mangin2015.bib>`__)
 
-- O. Mangin, P.Y. Oudeyer, **Learning semantic components from sub symbolic multi modal perception** *Joint IEEE International Conference on Development and Learning and on Epigenetic Robotics (ICDL EpiRob)*, Osaka (Japan) (2013) (more information: `[Mangin2013]`_, `bibtex <http://olivier.mangin.com/media/bibtex/Mangin2013.bib>`__)
+`[Mangin2013]`_
+  O\. Mangin, P.Y. Oudeyer, **Learning semantic components from sub symbolic multi modal perception** *Joint IEEE International Conference on Development and Learning and on Epigenetic Robotics (ICDL EpiRob)*, Osaka (Japan) (2013) (`bibtex <http://olivier.mangin.com/media/bibtex/Mangin2013.bib>`__)
 
 Please consider citing these papers when re-using the code in scientific publications.
 
