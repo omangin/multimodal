@@ -6,6 +6,7 @@ import scipy.sparse as sp
 
 from multimodal.lib import nmf
 from multimodal.lib.metrics import generalized_KL
+from multimodal.lib.array_utils import normalize_sum
 
 
 def random_NN_matrix(shape):
@@ -190,3 +191,23 @@ class TestSparseDot(unittest.TestCase):
         ok = np.multiply(np.dot(self.a, self.b), (self.ref.todense() != 0))
         ans = nmf._special_sparse_dot(self.a, self.b, self.ref).todense()
         assert_array_almost_equal(ans, ok)
+
+
+class TestFitUpdate(unittest.TestCase):
+
+    def setUp(self):
+        self.nmf = nmf.KLdivNMF(n_components=3, tol=1e-6, max_iter=200,
+                                eps=1.e-8, subit=10)
+        self.nmf.components_ = normalize_sum(
+            np.abs(np.random.random((3, 5))) + .01, axis=1)
+
+    def test_cv(self):
+        X = random_NN_matrix((10, 5))
+        W, errors = self.nmf.fit_update(X, return_errors=True, batch_iter=100)
+        # Last errors should be very close
+        self.assertTrue(abs(errors[-1] - errors[-2]) < errors[0] * 1.e-2)
+
+    def test_zero_error_on_fact_data(self):
+        X = np.dot(random_NN_matrix((4, 3)), random_NN_matrix((3, 5)))
+        W, errors = self.nmf.fit_update(X, return_errors=True, batch_iter=200)
+        self.assertTrue(errors[-1] < errors[0] * 1.e-3)

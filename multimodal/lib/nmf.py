@@ -156,6 +156,34 @@ class KLdivNMF(object):
         W_init = X.dot(H_init.T)
         return W_init, H_init
 
+    def fit_update(self, X, weights=1., return_errors=False, scale_W=False,
+                   batch_iter=1.):
+        """Same as fit_transform but for mini-batch update.
+
+        Assumes that dictionary is initialized.
+        """
+        X = atleast2d_or_csr(X)
+        check_non_negative(X, "NMF.fit")
+
+        # Init H from current dictionary
+        self._init_dictionary = self.components_
+        W, _ = self._init(X)
+
+        if return_errors:
+            errors = []
+
+        for n_iter in range(1, batch_iter + 1):
+            if return_errors:
+                errors.append(self.error(X, W, self.components_,
+                                         weights=weights))
+
+            W = self._update(X, W, _fit=True)
+
+        if return_errors:
+            return W, errors
+        else:
+            return W
+
     def fit_transform(self, X, y=None, weights=1., _fit=True,
                       return_errors=False, scale_W=False):
         """Learn a NMF model for the data X and returns the transformed data.
